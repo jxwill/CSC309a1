@@ -6,19 +6,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { username, password, role } = req.body;
+  const {firstname, lastname, email, password} = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
+  if (!firstname || !password || !email || !lastname) {
+    return res.status(400).json({ error: 'firstname lastname email password required' });
   }
 
   // Hash the password and create the user in Prisma
   hashPassword(password).then(hashedPassword => {
     prisma.user.create({
       data: {
-        username,
+        firstname,
+        lastname,
         password: hashedPassword,
-        role: role || 'USER',
+        email,
       },
     })
     .then(user => {
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
       console.error('Registration Error:', error);
 
       // Handle unique constraint error for username
-      if (error.code === 'P2002' && error.meta && error.meta.target.includes('username')) {
+      if (error.code === 'P2002' && error.meta && error.meta.target.includes('email')) {
         return res.status(400).json({ error: 'Username already exists' });
       }
 
