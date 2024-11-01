@@ -53,7 +53,7 @@ export async function getServerSideProps(context) {
       const user = await response.json();
   
       return {
-        props: { user }, // Pass the user data as props to the Profile page
+        props: { user, token}, // Pass the user data as props to the Profile page
       };
     } catch (error) {
       // Handle any errors
@@ -69,13 +69,14 @@ export async function getServerSideProps(context) {
   
 
   
-export default function Profile({ user }) {
+export default function Profile({ user, token }) {
   const [isEditing, setIsEditing] = useState(false); // Toggle between view and edit mode
   const [formData, setFormData] = useState({
     firstname: user.firstname,
     lastname: user.lastname,
     email: user.email,
   });
+  
   const [message, setMessage] = useState('');
 
   // Handle input changes in the form
@@ -90,8 +91,8 @@ export default function Profile({ user }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-
-    console.log("?????????????????????????")
+    
+    console.log('token from submit profile is:',token)
 
     try {
 
@@ -100,11 +101,12 @@ export default function Profile({ user }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Send token in Authorization header
+
         },
         body: JSON.stringify(formData),
       });
 
-      console.log("---------------------")
 
 
       if (response.ok) {
