@@ -7,7 +7,17 @@ export default async function handler(req, res) {
   
 
   try {
-    // Verify the JWT token
+
+    const authHeader = req.headers.authorization;
+      if (!authHeader) {
+      return res.status(401).json({ error: 'Unauthorized: No token provided' });
+        }
+    const token = authHeader.split(' ')[1]; // Extract the token from "Bearer <token>"
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+      return res.status(401).json({ error: 'Token has expired' });
+    }
     
 
     if(req.method === 'PUT') {
@@ -31,13 +41,9 @@ export default async function handler(req, res) {
     else if (req.method === 'GET') {
       // Fetch user profile based on the decoded email
       console.log(">>>>>>>>>>>>>>>>>>")
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-      return res.status(401).json({ error: 'Unauthorized: No token provided' });
-        }
+      
 
-    const token = authHeader.split(' ')[1]; // Extract the token from "Bearer <token>"
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
       const user = await prisma.user.findUnique({
         where: { email: decoded.email },
         select: {

@@ -20,12 +20,12 @@ export default async function handler(req, res) {
                 code,
                 language,
                 tags,
-                forkedFromId,
-                userId: req.user.id
+                forkedFromId
             }
         });
         return res.status(201).json(template);
     }
+    console.log(template);
 
     // View all templates for authenticated user (GET /templates/mine)
     if (method === 'GET' && query.mine) {
