@@ -14,15 +14,15 @@ datasource db {
 }
 
 model User {
-  id          Int       @id @default(autoincrement())
-  firstname   String
-  lastname    String
-  email       String    @unique
-  password    String
-  avatar      String?
-  phonenumber String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            Int            @id @default(autoincrement())
+  firstname     String
+  lastname      String
+  email         String         @unique
+  password      String
+  avatar        String?
+  phonenumber   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   // Relations
   codeTemplates CodeTemplate[]
   blogPosts     BlogPost[]
@@ -31,33 +31,37 @@ model User {
 }
 
 model CodeTemplate {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   explanation String
   tags        String
   code        String
   language    String
-  isForked    Boolean   @default(false)
-  author      User      @relation(fields: [authorId], references: [id])
+  isForked    Boolean    @default(false)
+  author      User       @relation(fields: [authorId], references: [id])
   authorId    Int
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   // Relations
   blogPosts   BlogPost[]
 }
 
 model BlogPost {
-  id          Int          @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   description String
+  content     String
   tags        String
-  author      User         @relation(fields: [authorId], references: [id])
-  authorId    Int
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
-  codeTemplates CodeTemplate[]
+  user          User           @relation(fields: [userId], references: [id])
+  userId        Int
+  codeTemplates CodeTemplate[] // Blog post can reference multiple code templates
   comments      Comment[]
+  ratings       Rating[]
+  Report        Report[]
 }
 
 model Comment {
@@ -74,13 +78,27 @@ model Comment {
   updatedAt       DateTime  @updatedAt
 }
 
-model Report{
-  id              Int       @id @default(autoincrement())
-  reason          String
-  explanation     String
-  reporterId      Int
-  ContentId       Int      
-  createdAt       DateTime  @default(now())
+model Report {
+  id          Int      @id @default(autoincrement())
+  reason      String
+  explanation String
+  reporterId  Int
+  ContentId   Int
+  createdAt   DateTime @default(now())
 
-  user            User[]
+  user User[]
+}
+
+model Rating {
+  id        Int      @id @default(autoincrement())
+  value     Int // 1 for upvote, -1 for downvote
+  createdAt DateTime @default(now())
+
+  // Relations
+  user       User      @relation(fields: [userId], references: [id])
+  userId     Int
+  blogPost   BlogPost? @relation(fields: [blogPostId], references: [id])
+  blogPostId Int?
+  comment    Comment?  @relation(fields: [commentId], references: [id])
+  commentId  Int?
 }
