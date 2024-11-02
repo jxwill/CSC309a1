@@ -44,6 +44,6 @@ export default async function handler(req, res) {
         res.status(200).json({ success: true, message: 'Blog post deleted successfully' });
     } catch (error) {
         console.error('Error deleting blog post:', error);
-        res.status(500).json({ error: 'Failed to delete blog post' });
+        res.status(500).json({ error: 'Failed to delete this blog post' });
     }
 }
