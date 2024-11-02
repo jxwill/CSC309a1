@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         lastname,
         password: hashedPassword,
         email,
-        role: role,
+        role: role || 'user',
       },
     })
     .then(user => {
