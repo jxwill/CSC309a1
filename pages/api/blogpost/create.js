@@ -1,9 +1,6 @@
 import prisma from "utils/db";
-<<<<<<< Updated upstream
 import { verifyToken } from "utils/auth";
-=======
-import { verifyToken } from "@/utils/auth";
->>>>>>> Stashed changes
+
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
