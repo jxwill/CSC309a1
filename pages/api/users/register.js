@@ -8,8 +8,8 @@ export default async function handler(req, res) {
 
   const {firstname, lastname, email, password, role} = req.body;
 
-  if (!firstname || !password || !email || !lastname || !role) {
-    return res.status(400).json({ error: 'firstname lastname email password role required' });
+  if (!firstname || !password || !email || !lastname) {
+    return res.status(400).json({ error: 'firstname lastname email password required' });
   }
 
   // Hash the password and create the user in Prisma
