@@ -1,35 +1,26 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from "utils/db";
 
 export default async function handler(req, res) {
-    const { searchQuery } = req.query;
+    const { title, content, tags, codeTemplate } = req.query;
 
     try {
-        // Fetch blog posts based on the search query
         const blogPosts = await prisma.blogPost.findMany({
             where: {
                 OR: [
-                    { title: { contains: searchQuery, mode: 'insensitive' } },
-                    { content: { contains: searchQuery, mode: 'insensitive' } },
-                    { tags: { contains: searchQuery, mode: 'insensitive' } },
-                    {
+                    title ? { title: { contains: title, mode: 'insensitive' } } : undefined,
+                    content ? { content: { contains: content, mode: 'insensitive' } } : undefined,
+                    tags ? { tags: { contains: tags, mode: 'insensitive' } } : undefined,
+                    codeTemplate ? {
                         codeTemplates: {
                             some: {
-                                title: { contains: searchQuery, mode: 'insensitive' },
-                            },
-                        },
-                    },
-                ],
+                                title: { contains: codeTemplate, mode: 'insensitive' },
+                            }
+                        }
+                    } : undefined
+                ].filter(Boolean), // Remove undefined entries for cleaner code
             },
             include: {
-                codeTemplates: true,  // Include code templates in the response
-                user: {               // Include the author's name
-                    select: {
-                        firstName: true,
-                        lastName: true,
-                    },
-                },
+                codeTemplates: true,
             },
         });
 

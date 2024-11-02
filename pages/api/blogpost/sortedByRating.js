@@ -1,19 +1,18 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from 'utils/db';
 
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
-        return res.status(405).json({ success: false, message: `Method ${req.method} not allowed` });
+        res.setHeader('Allow', ['GET']);
+        return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
     try {
-        // Fetch blog posts sorted by the sum of ratings (upvotes - downvotes)
+        // Fetch blog posts along with comments and their ratings
         const blogPosts = await prisma.blogPost.findMany({
             include: {
                 ratings: {
                     select: {
-                        value: true  // 1 for upvote, -1 for downvote
+                        value: true  // 1 for upvote, -1 for down vote
                     }
                 },
                 comments: {
@@ -22,29 +21,31 @@ export default async function handler(req, res) {
                             select: {
                                 value: true
                             }
-                        },
+                        }
                     }
                 }
             }
         });
 
-        // Sort blog posts based on the rating score (sum of values)
+        // Calculate the rating score for each blog post and comment
         const sortedBlogPosts = blogPosts.map(post => {
-            const ratingScore = post.ratings.reduce((sum, rating) => sum + rating.value, 0);
-            return { ...post, ratingScore };
-        }).sort((a, b) => b.ratingScore - a.ratingScore);
+            const postRatingScore = post.ratings.reduce((sum, rating) => sum + rating.value, 0);
 
-        // Sort comments within each blog post
-        sortedBlogPosts.forEach(post => {
-            post.comments = post.comments.map(comment => {
+            const sortedComments = post.comments.map(comment => {
                 const commentRatingScore = comment.ratings.reduce((sum, rating) => sum + rating.value, 0);
-                return { ...comment, commentRatingScore };
-            }).sort((a, b) => b.commentRatingScore - a.commentRatingScore);
-        });
+                return { ...comment, ratingScore: commentRatingScore };
+            }).sort((a, b) => b.ratingScore - a.ratingScore);
+
+            return {
+                ...post,
+                ratingScore: postRatingScore,
+                comments: sortedComments,
+            };
+        }).sort((a, b) => b.ratingScore - a.ratingScore);
 
         res.status(200).json({ success: true, data: sortedBlogPosts });
     } catch (error) {
-        console.error('Error fetching blog posts:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch blog posts' });
+        console.error('Error fetching sorted blog posts:', error);
+        res.status(500).json({ error: 'Failed to fetch sorted blog posts' });
     }
 }
