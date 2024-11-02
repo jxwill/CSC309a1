@@ -19,10 +19,11 @@ model User {
   lastname      String
   email         String         @unique
   password      String
-  avatar        String?
+  role          String         @default("User")
   phonenumber   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  banned        Boolean        @default(false)
   // Relations
   codeTemplates CodeTemplate[]
   blogPosts     BlogPost[]
@@ -49,13 +50,14 @@ model CodeTemplate {
 }
 
 model BlogPost {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  content     String
-  tags        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  title        String
+  description  String
+  content      String
+  tags         String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  hidden       Boolean   @default(false) // New field to indicate if a post is hidden
 
   // Relations
   user          User           @relation(fields: [userId], references: [id])
@@ -80,19 +82,22 @@ model Comment {
   updatedAt       DateTime  @updatedAt
 
   Rating Rating[]
+
+  Report Report[]
 }
 
 model Report {
-  id          Int      @id @default(autoincrement())
-  reason      String
-  explanation String
-  reporterId  Int
-  ContentId   Int
-  createdAt   DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  reason          String
+  additionalInfo  String?
+  user            User      @relation(fields: [userId], references: [id])
+  userId          Int
+  blogPost        BlogPost? @relation(fields: [blogPostId], references: [id])
+  blogPostId      Int?
+  comment         Comment?  @relation(fields: [commentId], references: [id])
+  commentId       Int?
 
-  user User[]
-
-  BlogPost BlogPost[]
+  @@unique([blogPostId, commentId]) // Ensures that a report targets either a BlogPost or a Comment, not both
 }
 
 model Rating {

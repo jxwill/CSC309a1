@@ -5,7 +5,7 @@ CREATE TABLE "User" (
     "lastname" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
-    "avatar" TEXT,
+    "role" TEXT NOT NULL,
     "phonenumber" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
@@ -15,7 +15,7 @@ CREATE TABLE "User" (
 CREATE TABLE "CodeTemplate" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "title" TEXT NOT NULL,
-    "explanation" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
     "tags" TEXT NOT NULL,
     "code" TEXT NOT NULL,
     "language" TEXT NOT NULL,
@@ -31,11 +31,12 @@ CREATE TABLE "BlogPost" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
     "tags" TEXT NOT NULL,
-    "authorId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "BlogPost_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "userId" INTEGER NOT NULL,
+    CONSTRAINT "BlogPost_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -63,11 +64,32 @@ CREATE TABLE "Report" (
 );
 
 -- CreateTable
+CREATE TABLE "Rating" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "value" INTEGER NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" INTEGER NOT NULL,
+    "blogPostId" INTEGER,
+    "commentId" INTEGER,
+    CONSTRAINT "Rating_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Rating_blogPostId_fkey" FOREIGN KEY ("blogPostId") REFERENCES "BlogPost" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Rating_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "_BlogPostToCodeTemplate" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
     CONSTRAINT "_BlogPostToCodeTemplate_A_fkey" FOREIGN KEY ("A") REFERENCES "BlogPost" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "_BlogPostToCodeTemplate_B_fkey" FOREIGN KEY ("B") REFERENCES "CodeTemplate" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "_BlogPostToReport" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+    CONSTRAINT "_BlogPostToReport_A_fkey" FOREIGN KEY ("A") REFERENCES "BlogPost" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_BlogPostToReport_B_fkey" FOREIGN KEY ("B") REFERENCES "Report" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -86,6 +108,12 @@ CREATE UNIQUE INDEX "_BlogPostToCodeTemplate_AB_unique" ON "_BlogPostToCodeTempl
 
 -- CreateIndex
 CREATE INDEX "_BlogPostToCodeTemplate_B_index" ON "_BlogPostToCodeTemplate"("B");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_BlogPostToReport_AB_unique" ON "_BlogPostToReport"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_BlogPostToReport_B_index" ON "_BlogPostToReport"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_ReportToUser_AB_unique" ON "_ReportToUser"("A", "B");

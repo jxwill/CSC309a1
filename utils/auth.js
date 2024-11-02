@@ -29,15 +29,16 @@ export function generateRefreshToken(obj) {
 
 export function verifyToken(token) {
   if (!token?.startsWith("Bearer ")) {
+    console.log("did not pass bear check", token);
     return null;
   }
-
+  console.log(token);
   token = token.split(" ")[1];
-
+  console.log("pass split check", token);
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (err) {
-    return null;
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 }
 
