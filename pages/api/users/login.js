@@ -20,13 +20,17 @@ export default async function handler(req, res) {
       where: { email },
     });
 
+    if (!user || user.banned) {
+      return res.status(401).json({ error: user ? 'You have been banned' : 'Invalid credentials' });
+    }
+
 
     if (!user || !(await comparePassword(password, user.password))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const accesstoken = generateToken({id: user.id, email: user.email});
-    const refreshtoken = generateRefreshToken({id: user.id, email: user.email});
+    const accesstoken = generateToken({ id: user.id, email: user.email, role: user.role });
+    const refreshtoken = generateRefreshToken({ id: user.id, email: user.email, role: user.role });
     res.setHeader('Set-Cookie', serialize('token', refreshtoken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Set secure flag in production

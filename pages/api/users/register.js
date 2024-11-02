@@ -6,10 +6,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const {firstname, lastname, email, password} = req.body;
+  const {firstname, lastname, email, password, role} = req.body;
 
-  if (!firstname || !password || !email || !lastname) {
-    return res.status(400).json({ error: 'firstname lastname email password required' });
+  if (!firstname || !password || !email || !lastname || !role) {
+    return res.status(400).json({ error: 'firstname lastname email password role required' });
   }
 
   // Hash the password and create the user in Prisma
@@ -20,6 +20,7 @@ export default async function handler(req, res) {
         lastname,
         password: hashedPassword,
         email,
+        role: role,
       },
     })
     .then(user => {
