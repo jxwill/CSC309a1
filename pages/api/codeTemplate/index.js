@@ -3,16 +3,16 @@ import prisma from "@/utils/db";
 export default async function handler(req, res) {
     console.log('Im here');
     const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
 
     try {
         // Save a new template (POST /templates)
         if (req.method === 'POST') {
             const { title, description, tags, code, language, authorId } = req.body;
             
-            if (!authHeader) {
-                return res.status(401).json({ error: 'Unauthorized: No token provided' });
-            }
-
             const template = await prisma.codeTemplate.create({
                 data: {
                     title,
