@@ -21,6 +21,7 @@ export default async function handler(req, res) {
 
     // Extract necessary fields from the request body
     const { title, description, content, tags, codeTemplateIds } = req.body;
+    const codeTemplateIdArray = Array.isArray(codeTemplateIds) ? codeTemplateIds : [codeTemplateIds];
 
     // Validate required fields
     if (!title || !description || !content || !tags) {
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
                 tags,
                 userId: tokenPayload.id,  // Use the authenticated user's ID
                 codeTemplates: {
-                    connect: codeTemplateIds?.map(id => ({ id })) || [],
+                    connect: codeTemplateIdArray.map(id => ({ id })),
                 },
             },
         });
