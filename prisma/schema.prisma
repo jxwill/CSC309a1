@@ -35,7 +35,7 @@ model User {
 model CodeTemplate {
   id          Int        @id @default(autoincrement())
   title       String
-  explanation String
+  description String
   tags        String
   code        String
   language    String
