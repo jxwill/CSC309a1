@@ -9,15 +9,29 @@ export default async function handler(req, res) {
 
     try {
         if (req.method === 'GET') {
-            const { title } = req.body;
+            const { options, info } = req.query;  // Use `req.query` for GET request parameters
+
+            let template;
+
+            if (options === "title") {
+                template = await prisma.codeTemplate.findMany({
+                    where: {
+                        title: info
+                    }
+                });
+            } else if (options === "tags") {
+                template = await prisma.codeTemplate.findMany({
+                    where: {
+                        tags: {
+                            has: info
+                        }
+                    }
+                });
+            } else {
+                return res.status(400).json({ error: 'Invalid option parameter' });
+            }
             
-            const template = await prisma.codeTemplate.findMany({
-                where: {
-                    title: title
-                }
-            });
-            
-            return res.status(201).json(template);
+            return res.status(404).json({error: 'cannot find template with given options'}); // Use 200 for successful GET response
         } else {
             // Return 405 if method is not allowed
             return res.status(405).json({ error: 'Method Not Allowed' });
