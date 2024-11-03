@@ -7,12 +7,10 @@ export default async function handler(req, res) {
   }
 
   // Extract the token from the Authorization header
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const token = req.headers.authorization;
+  if (!token || !token.startsWith("Bearer ")) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = verifyToken(token); // Verify and decode the token
@@ -26,7 +24,7 @@ export default async function handler(req, res) {
       data: {
         content,
         blogPostId,
-        userId: decoded.id, // Use the user ID from the decoded token
+        authorId: decoded.id, // Use the user ID from the decoded token
       },
     });
 

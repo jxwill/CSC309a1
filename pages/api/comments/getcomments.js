@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const comments = await prisma.comment.findMany({
       where: {
         blogPostId: parseInt(blogPostId),
-        ...(isAdmin ? {} : { hidden: false }) // Only show non-hidden comments for non-admin users
+        //...(isAdmin ? {} : { hidden: false }) // Only show non-hidden comments for non-admin users
       },
       orderBy: { createdAt: 'asc' }, // Order comments by creation date
     });
