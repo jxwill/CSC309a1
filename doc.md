@@ -1336,7 +1336,26 @@ or
 #### Example Response
 - **Response (200 OK)**: Blog posts with comments sorted by rating score.
 ```json
-
+{
+    "success": true,
+    "data": {
+        "id": 3,
+        "title": "Python guidline",
+        "description": "A comprehensive guide to async programming in python",
+        "content": "...",
+        "tags": "python, guide",
+        "createdAt": "2024-11-03T21:50:56.284Z",
+        "updatedAt": "2024-11-03T21:50:56.284Z",
+        "userId": 3,
+        "ratings": [
+            {
+                "value": 1
+            }
+        ],
+        "comments": [],
+        "ratingScore": 1
+    }
+}
 ```
 #### Response Codes
 - `200 OK`:  Blog posts and comments retrieved and sorted successfully.

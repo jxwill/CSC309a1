@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         const existingRating = await prisma.rating.findFirst({
             where: { userId: tokenPayload.id, blogPostId: parseInt(id) },
         });
-        console.log("line 37", existingRating, tokenPayload.id);
+
         let rating;
         if (existingRating) {
             // Update the rating if it exists
@@ -49,6 +49,8 @@ export default async function handler(req, res) {
                 },
             });
         }
+        console.log("Updated rating:", rating);
+
 
         res.status(200).json({ success: true, data: rating });
     } catch (error) {
