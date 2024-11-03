@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     }
 
     // Check if the user is either the author of the comment or an admin
-    if (comment.userId !== decoded.id && decoded.role !== 'admin') {
+    if (comment.authorId  !== decoded.id && decoded.role !== 'admin') {
       return res.status(403).json({ error: 'Access denied' });
     }
 

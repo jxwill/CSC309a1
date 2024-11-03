@@ -1,6 +1,5 @@
 import prisma from "utils/db";
-import { verifyToken } from "utils/auth";
-
+import { verifyToken } from "utils/middleware";
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -22,7 +21,6 @@ export default async function handler(req, res) {
 
     // Extract necessary fields from the request body
     const { title, description, content, tags, codeTemplateIds } = req.body;
-    const codeTemplateIdArray = Array.isArray(codeTemplateIds) ? codeTemplateIds : [codeTemplateIds];
 
     // Validate required fields
     if (!title || !description || !content || !tags) {
@@ -39,7 +37,7 @@ export default async function handler(req, res) {
                 tags,
                 userId: tokenPayload.id,  // Use the authenticated user's ID
                 codeTemplates: {
-                    connect: codeTemplateIdArray.map(id => ({ id })),
+                    connect: codeTemplateIds?.map(id => ({ id })) || [],
                 },
             },
         });

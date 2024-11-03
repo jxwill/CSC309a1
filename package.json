@@ -7,13 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie"
+    "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie formidable"
   },
   "dependencies": {
     "@prisma/client": "^5.21.1",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cookie": "^1.0.1",
+    "formidable": "^3.5.2",
     "jsonwebtoken": "^9.0.2",
     "next": "^15.0.2",
     "prisma": "^5.21.1",

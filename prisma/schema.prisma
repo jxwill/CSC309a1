@@ -20,7 +20,7 @@ model User {
   email         String         @unique
   password      String
   role          String         @default("User")
-  phonenumber   String?
+  avatar        String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   banned        Boolean        @default(false)

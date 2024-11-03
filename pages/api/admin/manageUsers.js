@@ -38,5 +38,5 @@ export default async function handler(req, res) {
     }
   }
 
-  await adminProtected(w, res, next);
+  await adminProtected(req, res, next);
 }
