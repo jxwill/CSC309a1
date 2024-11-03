@@ -1,5 +1,5 @@
 import prisma from "utils/db";
-import { verifyToken } from "utils/middleware";
+import { verifyToken } from "utils/auth";
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -28,7 +28,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Create the blog post for the authenticated user
+       // Ensure `codeTemplateIds` is always an array, even if it's a single integer
+        const codeTemplateIdArray = Array.isArray(codeTemplateIds) ? codeTemplateIds : [codeTemplateIds];
+
         const blogPost = await prisma.blogPost.create({
             data: {
                 title,
@@ -37,10 +39,11 @@ export default async function handler(req, res) {
                 tags,
                 userId: tokenPayload.id,  // Use the authenticated user's ID
                 codeTemplates: {
-                    connect: codeTemplateIds?.map(id => ({ id })) || [],
+                    connect: codeTemplateIdArray.map(id => ({ id })),
                 },
             },
         });
+
 
         res.status(201).json({ success: true, data: blogPost });
     } catch (error) {

@@ -1160,3 +1160,414 @@ or
   "message": "Internal Server Error"
 }
 ```
+
+#### API Endpoint: Create a Blog Post
+- **Endpoint**: `/api/blogpost/create`
+- **Method**: `POST`
+- **Description**: This API provides a POST endpoint to create a new blog post. Users must be authorized with a valid JWT token, passed in the Authorization header as Bearer <token>. In the request body, fields such as title, description, content, and tags are required to create a post, while codeTemplateId is optional and allows associating existing code template with the blog post.
+#### Request
+- **Authorization**: Bearer token
+
+
+- **Payload**:
+  ```json
+  {
+    "title": "Sample Blog Post",
+    "description": "This is a description of the blog post.",
+    "content": "Content for the blog post goes here.",
+    "tags": "sample, blog, post",
+    "codeTemplateIds": 1 //optional Id for associated code template
+  }
+  ```
+
+#### Example Request in Postman
+1. **Method**: `POST`
+2. **URL**: `http://localhost:3000/api/codeTemplate/execution`
+3. **Headers**： 
+`Authorization: Bearer <JWT_TOKEN>`
+
+#### Example Response
+- `Success (201 Created)`:Blog post created successfully.
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "title": "Sample Blog Post Title",
+    "description": "This is a sample description for the blog post.",
+    "content": "Here is the main content of the blog post.",
+    "tags": "sample, blog, post",
+    "createdAt": "2024-11-02T19:15:54.584Z",
+    "updatedAt": "2024-11-02T19:15:54.584Z",
+    "userId": 3,
+    "codeTemplates": [
+      {
+        "id": 1,
+        "title": "Sample Code Template 1",
+        "description": "A sample code template.",
+        "code": "console.log('Hello World');",
+        "language": "JavaScript"
+      },
+      {
+        "id": 2,
+        "title": "Sample Code Template 2",
+        "description": "Another code template example.",
+        "code": "print('Hello World')",
+        "language": "Python"
+      }
+    ]
+  }
+}
+
+```
+#### Response Codes
+- `201 Created`: Blog post created successfully
+- `400 Bad Request`:If any required fields are missing or invalid.
+```json
+{
+  "error": "All fields (title, description, content, tags) are required"
+}
+```
+
+- `401 Unauthorized`: Authorization token is missing or invalid.
+```json
+{
+  "error": "Unauthorized: Invalid or expired token"
+}
+```
+- `405 Method Not Allowed`: Request method is not POST.
+```json
+{
+  "error": "Method <method> Not Allowed"
+}
+
+```
+- `500 Internal Server Error`: An unexpected error occurred.
+```json
+{
+  "error": "Failed to create blog post"
+}
+
+```
+
+#### API Endpoint: Create a Blog Post
+- **Endpoint**: `/api/blogpost`
+- **Method**: `GET`
+- **Description**: This endpoint allows visitors to search for blog posts based on various criteria. The user can provide any combination of the query parameters title, content, tags, or codeTemplate to search for relevant blog posts. Each parameter performs a partial (case-insensitive) match, allowing flexible search functionality.
+
+#### Query Request
+- `title` (optional):  Searches for blog posts containing the specified text within the title.
+- `content` (optional):  Searches for blog posts containing the specified text within the content.
+- `tags` (optional): Searches for blog posts that include the specified tags.
+- `codeTemplate` (optional): Searches for blog posts that reference a code template with a matching title.
+
+#### Example Request in Postman
+1. **Method**: `GET`
+2. **URL**: `http://localhost:3000/api/blogpost?title=Sample+Title&tags=example`
+
+#### Example Response
+- **Response (200 OK)**: Blog posts retrieved successfully.
+```json
+{
+    "success": true,
+    "data": [
+        {
+            "id": 2,
+            "title": "Updated Title",
+            "description": "Updated description of the blog post.",
+            "content": "Updated content for the blog post.",
+            "tags": "updated, tags",
+            "createdAt": "2024-11-02T19:15:54.584Z",
+            "updatedAt": "2024-11-02T20:26:39.629Z",
+            "userId": 3,
+            "codeTemplates": [
+                {
+                    "id": 1,
+                    "title": "this is code 2",
+                    "description": "second save",
+                    "tags": "remove",
+                    "code": "print('bye')",
+                    "language": "python",
+                    "isForked": false,
+                    "authorId": 3,
+                    "createdAt": "2024-11-02T18:37:51.670Z",
+                    "updatedAt": "2024-11-02T18:37:51.670Z"
+                }
+            ]
+        }
+    ]
+}
+```
+#### Response Codes
+- `200 OK`: Blog posts retrieved successfully.
+- `400 Bad Request`: No search criteria provided.
+```json
+{
+  "success": false,
+  "message": "No search criteria provided"
+}
+
+```
+- `404 Not Found`:  No blog posts found for the provided criteria.
+```json
+{
+  "success": false,
+  "message": "No blog posts found"
+}
+
+```
+- `500 Internal Server Error`: An unexpected error occurred.
+```json
+{
+  "success": false,
+  "message": "Failed to fetch blog posts"
+}
+
+```
+#### API Endpoint: Get Blog Posts Sorted by Rating
+- **Endpoint**: `/api/blogpost/sortedByRating`
+- **Method**: `GET`
+- **Description**:  This endpoint retrieves all blog posts and their associated comments, sorted by rating. Each blog post and comment has an aggregated rating score calculated based on upvotes (1) and downvotes (-1). The response provides blog posts ordered by their rating score, with comments within each post also sorted by rating.
+
+#### Example Request in Postman
+1. **Method**: `GET`
+2. **URL**: `http://localhost:3000/api/blogpost/sortedByRating`
+
+#### Example Response
+- **Response (200 OK)**: Blog posts with comments sorted by rating score.
+```json
+
+```
+#### Response Codes
+- `200 OK`:  Blog posts and comments retrieved and sorted successfully.
+- `405 Method Not Allowed`:  Request method is not GET.
+```json
+{
+  "error": "Method GET Not Allowed"
+}
+
+```
+- `500 Internal Server Error`: An unexpected error occurred.
+```json
+{
+  "error": "Failed to fetch sorted blog posts"
+}
+
+```
+#### API Endpoint: Delete Blog Post
+- **Endpoint**: `/api/blogpost/delete`
+- **Method**: `DELETE`
+- **Description**:  This endpoint allows authorized users to delete a blog post by its ID. Users must be authenticated with a valid JWT token, which is passed in the Authorization header as Bearer <token>. Only the author of the blog post is permitted to delete it. The blog post ID should be provided as a query parameter in the request.
+
+#### Example Request in Postman
+1. **Method**: `DELETE
+2. **URL**: `http://localhost:3000/api/blogpost/delete?id=<blogPostId>`
+- **Headers**:
+- `Authorization: Bearer <token>`
+
+#### Example Response
+- **Response (200 OK)**: Blog post deleted successfully.
+- **Response (403 Forbidden)**: User does not have permission to delete this blog post.
+```json
+{
+  "error": "Forbidden: You do not have permission to delete this blog post"
+}
+
+```
+- **Response (404 Not Found)**: Blog post with the specified ID does not exist.
+```json
+{
+  "error": "Blog post not found"
+}
+
+```
+- **Response (400 Bad Request)**:Missing or invalid fields in the request.
+```json
+{
+  "error": "Blog post ID is required"
+}
+```
+#### Response Codes
+- `200 OK`: Blog post deleted successfully.
+- `403 Forbidden`:  User does not have permission to delete the specified blog post.
+- `404 Not Found`: Blog post with the specified ID does not exist.
+- `405 Method Not Allowed`: Request method is not DELETE.
+```json
+{
+  "error": "Method DELETE Not Allowed"
+}
+
+```
+- `500 Internal Server Error`: An unexpected error occurred while processing the request.
+```json
+{
+  "error": "Failed to delete blog post"
+}
+
+```
+#### API Endpoint: Update/Edit Blog Post
+- **Endpoint**: `/api/blogpost/[id]/edit`
+- **Method**: `PUT`
+- **Description**: This endpoint allows authenticated users to update an existing blog post. Users must provide a valid JWT token in the Authorization header as Bearer <token>. Only the author of the blog post is permitted to update it. The blog post ID and the updated fields (title, description, content, tags) should be included in the request body.
+
+#### Example Request in Postman
+1. **Method**: `PUT`
+2. **URL**: `http://localhost:3000/api/blogpost/<id>/edit`
+
+#### Request
+**Headers**:
+    - `Authorization: Bearer <token>`
+
+**Payload**:
+```json
+{
+  "id": 1,
+  "title": "Updated Title",
+  "description": "Updated description of the blog post",
+  "content": "Updated content for the blog post",
+  "tags": "updated, tags"
+}
+
+```
+#### Example Response
+- **Response (200 OK)**: Blog post updated successfully.
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "title": "Updated Title",
+    "description": "Updated description of the blog post",
+    "content": "Updated content for the blog post",
+    "tags": "updated, tags",
+    "userId": 3,
+    "createdAt": "2024-11-03T02:10:18.000Z",
+    "updatedAt": "2024-11-03T02:40:18.000Z"
+  }
+}
+
+```
+- **Response (403 Forbidden)**: User does not have permission to update this blog post.
+```json
+{
+  "error": "Forbidden: You do not have permission to edit this blog post"
+}
+
+```
+- **Response (404 Not Found)**: Blog post with the specified ID does not exist.
+```json
+{
+  "error": "Blog post not found"
+}
+
+```
+- **Response (400 Bad Request): Missing or invalid fields in the request body.
+```json
+{
+  "error": "All fields (id, title, description, content, tags) are required"
+}
+
+```
+#### Response Codes
+- `200 OK`: Blog post updated successfully.
+- `403 Forbidden`:  User does not have permission to update the specified blog post.
+- `404 Not Found`: Blog post with the specified ID does not exist.
+- `405 Method Not Allowed`: Request method is not PUT.
+```json
+{
+  "error": "Method PUT Not Allowed"
+}
+
+```
+- `500 Internal Server Error`:  An unexpected error occurred while processing the request.
+```json
+{
+  "error": "Failed to update blog post"
+}
+
+```
+#### API Endpoint: Rate a Blog Post
+- **Endpoint**: `/api/blogpost/[id]/rate`
+- **Method**: `POST`
+- **Description**: This endpoint allows authenticated users to rate a specific blog post by its id with either an upvote (1) or a downvote (-1). A valid JWT token is required in the Authorization header as Bearer <token>. If the user has already rated the post, their rating will be updated; otherwise, a new rating will be created.
+
+#### Example Request in Postman
+1. **Method**: `POST`
+2. **URL**: `http://localhost:3000/api/blogpost/<id>/rate`
+
+#### Request
+**Headers**: 
+    - `Authorization: Bearer <token>`
+
+**Payload**:
+```json
+{
+  "value": 1  // Use 1 for upvote, -1 for downvote
+}
+
+```
+
+#### Example Responses
+- **Response (200 OK)**: Rating created or updated successfully.
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "value": 1,
+    "createdAt": "2024-11-03T21:52:08.364Z",
+    "userId": 3,
+    "blogPostId": 3,
+    "commentId": null
+  }
+}
+
+```
+- **Response (400 Bad Request)**: Invalid rating value or missing required fields.
+```json
+{
+  "error": "Invalid rating value. Use 1 for upvote, -1 for downvote."
+}
+
+```
+
+- **Response (401 Unauthorized)**: No token provided or invalid token.
+```json
+{
+  "error": "Unauthorized: No token provided"
+}
+
+```
+- **Response (403 Forbidden)**: The user does not have permission to rate the blog post.
+```json
+{
+  "error": "Forbidden: You do not have permission to rate this blog post"
+}
+
+```
+- **Response (404 Not Found)**: Blog post with the specified id does not exist.
+```json
+{
+  "error": "Blog post not found"
+}
+
+```
+#### Response Codes
+- `200 OK`: Rating was created or updated successfully.
+- `400 Bad Request`: The rating value is invalid or required fields are missing.
+- `401 Unauthorized`: User is not authenticated.
+- `403 Forbidden`: User does not have permission to rate the blog post.
+- `405 Method Not Allowed`: Request method is not POST
+```json
+{
+  "error": "Method POST Not Allowed"
+}
+
+```
+- `500 Internal Server Error`: An unexpected error occurred while processing the request.
+```json
+{
+  "error": "Failed to rate blog post"
+}
+
+```
