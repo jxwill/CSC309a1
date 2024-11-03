@@ -86,6 +86,41 @@ Explain what these tests test and why
 Give an example
 ```
 
+### API
+
+## Code Template
+
+# save.js
+
+This API provides a POST endpoint to create a new code template in the database. Users must be authorized with a valid JWT token, passed in the Authorization header as Bearer <token>. Upon successful validation, the endpoint accepts parameters such as title, description, tags, code, language, and authorId. The authorId must match the ID in the decoded token payload; otherwise, the request will be denied with a 403 Forbidden status. The endpoint responds with the newly created template object upon success (201 Created) or an appropriate error code (401 Unauthorized, 403 Forbidden, 400 Bad Request, 405 Method Not Allowed, or 500 Internal Server Error) if there are issues.
+
+request body:
+
+```
+{
+  "title": "Example Template",
+  "description": "This is an example template description.",
+  "tags": "example, code",
+  "code": "console.log('Hello, World!');",
+  "language": "JavaScript",
+  "authorId": 1
+}
+```
+
+respond:
+
+```
+{
+  "id": 1,
+  "title": "Example Template",
+  "description": "This is an example template description.",
+  "tags": "example, code",
+  "code": "console.log('Hello, World!');",
+  "language": "JavaScript",
+  "authorId": 1
+}
+```
+
 ## 🎈 Usage <a name="usage"></a>
 
 Add notes about how to use the system.
