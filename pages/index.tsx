@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { motion } from "framer-motion";
+import GalaxyEffect from "./GalaxyEffect"; // Import the GalaxyEffect component
 
 interface UserProfile {
   firstname: string;
@@ -11,6 +13,7 @@ interface UserProfile {
 export default function HomePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showScrollLogin, setShowScrollLogin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -34,6 +37,15 @@ export default function HomePage() {
     };
 
     fetchProfile();
+
+    const handleScroll = () => {
+      setShowScrollLogin(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const handleGetStarted = () => {
@@ -45,9 +57,12 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-blue-100 to-blue-300">
+    <div className="relative min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-blue-100 to-blue-300">
+      {/* Add GalaxyEffect as a background */}
+      <GalaxyEffect />
+
       {/* Navbar */}
-      <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
+      <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg z-10">
         <Link href="/" className="text-xl font-bold">
           Scriptorium
         </Link>
@@ -141,27 +156,51 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center py-20">
-        <h1 className="text-5xl font-bold text-blue-800 mb-4">Welcome to Scriptorium</h1>
-        <p className="text-lg text-gray-700 mb-8">
+      <section className="flex flex-col items-center justify-center text-center py-20 z-10">
+        <motion.h1
+          className="text-5xl font-bold text-blue-800 mb-4"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+        >
+          Welcome to Scriptorium
+        </motion.h1>
+        <motion.p
+          className="text-lg text-gray-700 mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 0.5 }}
+        >
           Your personal space for writing, sharing, and connecting with others.
-        </p>
-        <button
+        </motion.p>
+        <motion.button
           onClick={handleGetStarted}
           className="px-8 py-4 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
         >
           Get Started
-        </button>
+        </motion.button>
       </section>
 
+      {/* Scroll Down Login */}
+      {showScrollLogin && (
+        <motion.div
+          className="fixed bottom-4 right-4 bg-white shadow-lg p-4 rounded-lg z-10"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Link href="/login" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Login
+          </Link>
+        </motion.div>
+      )}
+
       {/* Footer */}
-      <footer className="w-full py-4 bg-blue-600 text-white text-center">
+      <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">
         <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
       </footer>
     </div>
   );
 }
-
-
-
-

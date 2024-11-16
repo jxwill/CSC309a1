@@ -3,9 +3,9 @@ import prisma from "@/utils/db";
 export default async function handler(req, res) {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Unauthorized: No token provided' });
-    }
+    // if (!authHeader) {
+    //     return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    // }
 
     try {
         if (req.method === 'PATCH') {
