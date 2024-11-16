@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router"; // Import useRouter for redirection
 
 interface LoginFormState {
   email: string;
@@ -9,6 +10,7 @@ interface LoginFormState {
 export default function LoginPage() {
   const [formData, setFormData] = useState<LoginFormState>({ email: "", password: "" });
   const [error, setError] = useState<string>("");
+  const router = useRouter(); // Initialize the router
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -30,9 +32,9 @@ export default function LoginPage() {
         throw new Error("Invalid email or password");
       }
 
-      // Redirect to the "inside" page after successful login
+      // Redirect to the `/in-site` page after successful login
       alert("Login successful!");
-      window.location.href = "/in-site";
+      router.push("/in-site"); // Use router.push for navigation
     } catch (err: any) {
       setError(err.message);
     }

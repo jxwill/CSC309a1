@@ -10,7 +10,7 @@ const CodeTemplatePage = () => {
     // Fetch code template data from the API
     const fetchCodeTemplates = async () => {
       try {
-        const response = await fetch('/api/codeTemplate/show?options=title&info=aa', {
+        const response = await fetch('/api/codeTemplate/show?options=title&info=aaa', {
           headers: {
             Authorization: `Bearer YOUR_AUTH_TOKEN`, // Adjust the token dynamically as needed
           },
