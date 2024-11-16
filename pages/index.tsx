@@ -37,8 +37,11 @@ export default function HomePage() {
   }, []);
 
   const handleGetStarted = () => {
-    // Redirect to in-site as a visitor
     router.push("/in-site?visitor=true");
+  };
+
+  const handleMenuToggle = () => {
+    setMenuOpen(!menuOpen);
   };
 
   return (
@@ -51,7 +54,7 @@ export default function HomePage() {
 
         {/* Hamburger Menu for Mobile */}
         <div className="md:hidden">
-          <button onClick={() => setMenuOpen(!menuOpen)}>
+          <button onClick={handleMenuToggle}>
             <svg
               className="w-6 h-6"
               fill="none"
@@ -101,6 +104,40 @@ export default function HomePage() {
             </>
           )}
         </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="absolute top-16 right-4 w-48 bg-white text-black rounded-lg shadow-lg md:hidden">
+            {user ? (
+              <>
+                <Link href="/profile" className="block px-4 py-2 hover:bg-gray-100">
+                  Profile
+                </Link>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/users/logout", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    window.location.href = "/login";
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="block px-4 py-2 hover:bg-gray-100">
+                  Login
+                </Link>
+                <Link href="/register" className="block px-4 py-2 hover:bg-gray-100">
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -124,6 +161,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

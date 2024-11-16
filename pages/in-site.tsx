@@ -70,15 +70,21 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
   };
 
+  const handleMenuToggle = () => {
+    setMenuOpen(!menuOpen);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-blue-100 to-blue-300">
+      {/* Navbar */}
       <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
         <Link href="/" className="text-xl font-bold">
           Scriptorium
         </Link>
 
+        {/* Hamburger Menu for Mobile */}
         <div className="md:hidden">
-          <button onClick={() => setMenuOpen(!menuOpen)}>
+          <button onClick={handleMenuToggle}>
             <svg
               className="w-6 h-6"
               fill="none"
@@ -96,6 +102,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           </button>
         </div>
 
+        {/* Desktop Menu */}
         <div className="hidden md:flex space-x-4">
           {user ? (
             <>
@@ -124,8 +131,40 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
             </>
           )}
         </div>
+
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="absolute top-16 right-4 w-48 bg-white text-black rounded-lg shadow-lg md:hidden">
+            {user ? (
+              <>
+                <button
+                  onClick={handleProfileClick}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="block px-4 py-2 hover:bg-gray-100">
+                  Login
+                </Link>
+                <Link href="/register" className="block px-4 py-2 hover:bg-gray-100">
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        )}
       </nav>
 
+      {/* Main Content */}
       <div className="flex flex-col items-center justify-center mt-10">
         <h1 className="text-4xl font-bold mb-6">Welcome to In-Site Page</h1>
 
