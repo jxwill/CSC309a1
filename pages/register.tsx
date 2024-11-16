@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstname: "",
@@ -9,8 +8,10 @@ export default function RegisterPage() {
     email: "",
     password: "",
     avatar: "",
+    role: "User", // Default role is User
   });
   const [error, setError] = useState("");
+  const [showAdminField, setShowAdminField] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,6 +30,17 @@ export default function RegisterPage() {
     }
   };
 
+  // Hidden Admin Feature: Double-click on "Create an Account" title to show Admin field
+  const handleTitleDoubleClick = () => {
+    setShowAdminField(true);
+  };
+
+  const handleAdminKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === "happy") {
+      setFormData({ ...formData, role: "Admin" });
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -39,6 +51,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      console.log(response);
 
       if (!response.ok) {
         throw new Error("Registration failed. Email might already be in use.");
@@ -54,7 +67,12 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100">
       <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-6 text-blue-600">Create an Account</h1>
+        <h1
+          className="text-3xl font-bold text-center mb-6 text-blue-600"
+          onDoubleClick={handleTitleDoubleClick} // Double-click to reveal Admin field
+        >
+          Create an Account
+        </h1>
         <form onSubmit={handleRegister} className="space-y-5">
           <div className="flex flex-col space-y-2">
             <input
@@ -96,6 +114,15 @@ export default function RegisterPage() {
                 className="mt-2 w-full p-2 border border-gray-300 rounded-lg shadow-sm cursor-pointer"
               />
             </label>
+            {/* Hidden Admin Field */}
+            {showAdminField && (
+              <input
+                type="text"
+                placeholder="Enter Admin Secret Key"
+                onChange={handleAdminKeyChange}
+                className="w-full p-3 border border-red-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            )}
           </div>
           <button
             type="submit"
@@ -115,7 +142,6 @@ export default function RegisterPage() {
     </div>
   );
 }
-
 
 
 
