@@ -1,20 +1,16 @@
-// pages/api/users/login.js
-
 import prisma from "@/utils/db";
-import { comparePassword, generateToken, generateRefreshToken } from "@/utils/auth";
-import { serialize } from 'cookie';
+import { comparePassword, generateToken } from "@/utils/auth";
+import { serialize } from "cookie";
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const {email, password} = req.body;
+  const { email, password } = req.body;
 
-  console.log(email, password);
-
-  if (!password || !email) {
-    return res.status(400).json({ error: 'email password required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
   }
 
   try {
@@ -23,30 +19,35 @@ export default async function handler(req, res) {
     });
 
     if (!user || user.banned) {
-      return res.status(401).json({ error: user ? 'You have been banned' : 'Invalid credentials' });
+      return res.status(401).json({ error: user ? "You have been banned" : "Invalid credentials" });
     }
 
-
-    if (!user || !(await comparePassword(password, user.password))) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    if (!(await comparePassword(password, user.password))) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    // Generate the access token
     const accesstoken = generateToken({ id: user.id, email: user.email, role: user.role });
-    const refreshtoken = generateRefreshToken({ id: user.id, email: user.email, role: user.role });
-    res.setHeader('Set-Cookie', serialize('token', refreshtoken, {
+
+    // Set the cookie using serialize
+    const cookieString = serialize("token", accesstoken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Set secure flag in production
+      secure: process.env.NODE_ENV === "production",
       maxAge: 3600, // 1 hour
-      sameSite: 'strict',
-      path: '/',
-    }));
+      sameSite: "strict",
+      path: "/",
+    });
 
-    return res.status(200).json({accesstoken: accesstoken})
+    // Set the cookie header
+    res.setHeader("Set-Cookie", cookieString);
 
-
+    // Return a successful response
+    return res.status(200).json({ message: "Login successful" });
   } catch (error) {
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("Error in login API:", error);
+    return res.status(500).json({ error: "Internal server error" });
   } finally {
     await prisma.$disconnect();
   }
 }
+

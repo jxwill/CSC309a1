@@ -4,17 +4,20 @@ import { serialize } from 'cookie';
 
 export default async function handler(req, res) {
   // Token from Authorization header
-  
+  console.log(req,"this is in api/user/profile line 7");
 
   try {
+    console.log(req.headers.authorization,"this is in api/user/profile line 10");
 
     const authHeader = req.headers.authorization;
       if (!authHeader) {
-      return res.status(401).json({ error: 'Unauthorized: No token provided' });
+      return res.status(401).json({ error: 'Vistsor' });
         }
+
+        console.log(authHeader,"this is in api/user/profile line 16");
     const token = authHeader.split(' ')[1]; // Extract the token from "Bearer <token>"
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+    console.log(authHeader,"this is in api/user/profile line 19");
     if (decoded.exp && Date.now() >= decoded.exp * 1000) {
       return res.status(401).json({ error: 'Token has expired' });
     }
@@ -50,6 +53,7 @@ export default async function handler(req, res) {
           firstname: true,
           lastname: true,
           email: true,
+          avatar: true,
         },
       });
 
