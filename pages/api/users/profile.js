@@ -54,6 +54,7 @@ export default async function handler(req, res) {
           lastname: true,
           email: true,
           avatar: true,
+          role: true,
         },
       });
 

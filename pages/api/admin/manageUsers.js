@@ -2,41 +2,55 @@ import adminProtected from './protected';
 import prisma from "@/utils/db";
 
 export default async function handler(req, res) {
-  function next() {
-    if (req.method === 'PUT') {
-      // Update user role
-      const { email, role } = req.body;
+  async function next() {
+    try {
+      console.log("in line 7 -------", req.body);
+      const { email, role, banned} = req.body;
 
-      prisma.user.update({
-        where: { email: email },
-        data: { role: role },
-      })
-      .then(updatedUser => {
-        res.status(200).json(updatedUser);
-      })
-      .catch(error => {
-        res.status(500).json({ error: 'Failed to update user role' });
-      });
+      // Handle PUT request: Update user role or ban/unban user
+      if (req.method === 'PUT') {
+        if (!email ) {
+          return res.status(400).json({ error: "Email and action/role are required" });
+        }
 
-    } else if (req.method === 'DELETE') {
-      // Ban a user
-      const { email } = req.body;
+        // Update user role
+        if (role) {
+          const updatedUser = await prisma.user.update({
+            where: { email },
+            data: { role },
+          });
+          return res.status(200).json(updatedUser);
+        }
+        else{
+          const updatedUser = await prisma.user.update({
+            where: { email },
+            data: { banned: banned },
+          });
+          return res.status(200).json(updatedUser);
+        }
+      }
 
-      prisma.user.update({
-        where: { email: email },
-        data: { banned: true },
-      })
-      .then(() => {
-        res.status(200).json({ message: 'User banned successfully' });
-      })
-      .catch(error => {
-        res.status(500).json({ error: 'Failed to ban user' });
-      });
+      // Handle DELETE request: Delete a user from the database
+      if (req.method === 'DELETE') {
+        if (!email) {
+          return res.status(400).json({ error: "Email is required" });
+        }
 
-    } else {
-      res.status(405).json({ message: 'Method Not Allowed' });
+        await prisma.user.delete({
+          where: { email },
+        });
+
+        return res.status(200).json({ message: "User deleted successfully" });
+      }
+
+      // Method not allowed
+      return res.status(405).json({ error: "Method Not Allowed" });
+    } catch (error) {
+      console.error("Error in manageUsers API:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   }
 
+  // Ensure the request is from an authenticated admin user
   await adminProtected(req, res, next);
 }

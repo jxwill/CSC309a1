@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { firstname, lastname, email, password, avatar } = req.body;
+  const { firstname, lastname, email, password, avatar, role} = req.body;
 
   if (!firstname || !lastname || !email || !password) {
     return res.status(400).json({ error: "All fields are required." });
@@ -31,6 +31,7 @@ export default async function handler(req, res) {
         email,
         password: hashedPassword,
         avatar, // Store Base64 encoded avatar
+        role,
       },
     });
 

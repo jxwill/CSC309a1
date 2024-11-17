@@ -3,27 +3,34 @@ import prisma from "@/utils/db";
 
 export default async function handler(req, res) {
   // Define the next function to handle the GET request
-  function next() {
+  async function next() {
     if (req.method === 'GET') {
-      prisma.report.findMany({
-        include: {
-          blogPost: true, // Include blog post data if the report is about a blog post
-          comment: true,  // Include comment data if the report is about a comment
-        },
-      })
-      .then(reports => {
+      try {
+        const reports = await prisma.report.findMany({
+          include: {
+            user: {
+              select: { firstname: true, lastname: true, email: true },
+            },
+            blogPost: {
+              select: { title: true, userId: true },
+            },
+            comment: {
+              select: { content: true },
+            },
+          },
+        });
+
         res.status(200).json(reports);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error("Error fetching reports:", error);
-        res.status(500).json({ error: 'Failed to fetch reports' });
-      });
+        res.status(500).json({ error: "Failed to fetch reports" });
+      }
     } else {
-      res.status(405).json({ message: 'Method Not Allowed' });
+      res.status(405).json({ message: "Method Not Allowed" });
     }
   }
 
-  // Run the adminProtected function, passing in the next function
+  // Use the adminProtected middleware
   adminProtected(req, res, next);
 }
 

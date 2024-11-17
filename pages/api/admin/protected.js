@@ -9,7 +9,6 @@ export default async function adminProtected(req, res, next) {
   }
 
   try {
-    console.log('aaaaaaaaaaaaaa');
     const decodedToken = verifyToken(token);
     console.log(decodedToken.role);
     if (decodedToken.role !== 'Admin') {

@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     res.setHeader("Set-Cookie", cookieString);
 
     // Return a successful response
-    return res.status(200).json({ message: "Login successful" });
+    return res.status(200).json({accesstoken:accesstoken});
   } catch (error) {
     console.error("Error in login API:", error);
     return res.status(500).json({ error: "Internal server error" });
