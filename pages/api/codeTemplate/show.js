@@ -22,6 +22,13 @@ export default async function handler(req, res) {
                     }
                 });
             }
+            else if (options === "id") {
+                template = await prisma.codeTemplate.findMany({
+                    where: {
+                        id: parseInt(info)
+                    }
+                });
+            }
             else if (options === "title") {
                 template = await prisma.codeTemplate.findMany({
                     where: {

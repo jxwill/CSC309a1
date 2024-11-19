@@ -7,20 +7,26 @@ const CodeTemplatePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { codeTemplateId } = router.query; // Extract parameter from URL
-  console.log(codeTemplateId);
+  const { codeTemplateId } = router.query;
 
+  // Log when codeTemplateId is available
+  useEffect(() => {
+    if (codeTemplateId) {
+      console.log(`Code Template ID from URL: ${codeTemplateId}`);
+    }
+  }, [codeTemplateId]);
+
+  // Fetch specific code template when codeTemplateId is available
   useEffect(() => {
     if (!codeTemplateId) return; // Ensure the parameter is available before making API calls
 
-    // Fetch specific code template data from the API
     const fetchCodeTemplate = async () => {
       try {
         const response = await fetch(
           `/api/codeTemplate/show?options=id&info=${codeTemplateId}`,
           {
             headers: {
-              Authorization: `Bearer YOUR_AUTH_TOKEN`, // Adjust the token dynamically as needed
+              Authorization: `Bearer YOUR_AUTH_TOKEN`, // Replace YOUR_AUTH_TOKEN with your actual token
             },
           }
         );
@@ -32,6 +38,7 @@ const CodeTemplatePage = () => {
           setError('Unauthorized: No token provided or invalid token.');
         } else {
           console.error('Failed to fetch code template');
+          setError('Failed to fetch code template. Please try again later.');
         }
       } catch (error) {
         console.error('Error fetching code template:', error);
@@ -44,9 +51,9 @@ const CodeTemplatePage = () => {
     fetchCodeTemplate();
   }, [codeTemplateId]);
 
+  // Handle code update and execution
   const handleUpdateAndRunCode = async (id, updatedCode) => {
     try {
-      // Update the database with the edited code
       const updateResponse = await fetch(`/api/codeTemplate/update?id=${id}`, {
         method: 'PATCH',
         headers: {
@@ -65,12 +72,12 @@ const CodeTemplatePage = () => {
         return;
       }
 
-      // After successful update, execute the updated code
       const runResponse = await fetch(`/api/codeTemplate/execution?id=${id}`, {
         headers: {
           Authorization: `Bearer YOUR_AUTH_TOKEN`,
         },
       });
+
       const result = await runResponse.text();
       setTerminalOutput(result);
     } catch (error) {
@@ -78,6 +85,7 @@ const CodeTemplatePage = () => {
     }
   };
 
+  // Handle code changes in the UI
   const handleCodeChange = (id, newCode) => {
     setCodeTemplates((prevTemplates) =>
       prevTemplates.map((template) =>
@@ -100,7 +108,6 @@ const CodeTemplatePage = () => {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif' }}>
-      {/* Header */}
       <header
         style={{
           backgroundColor: '#2196f3',
@@ -113,7 +120,6 @@ const CodeTemplatePage = () => {
         <h1 style={{ margin: 0 }}>Code Template Manager</h1>
       </header>
 
-      {/* Main Content */}
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         <h1>Code Templates</h1>
         <div
@@ -134,20 +140,11 @@ const CodeTemplatePage = () => {
                 backgroundColor: '#fff',
               }}
             >
-              {/* Title */}
               <h1 style={{ margin: '0 0 10px' }}>{template.title}</h1>
-
-              {/* Description */}
-              <p style={{ fontStyle: 'italic', color: '#555' }}>
-                {template.description}
-              </p>
-
-              {/* Editable Code Editor */}
+              <p style={{ fontStyle: 'italic', color: '#555' }}>{template.description}</p>
               <textarea
                 value={template.code}
-                onChange={(e) =>
-                  handleCodeChange(template.id, e.target.value)
-                }
+                onChange={(e) => handleCodeChange(template.id, e.target.value)}
                 style={{
                   width: 'calc(100% - 20px)',
                   margin: '0 auto',
@@ -161,8 +158,6 @@ const CodeTemplatePage = () => {
                   resize: 'none',
                 }}
               />
-
-              {/* Buttons */}
               <div
                 style={{
                   marginTop: '10px',
@@ -171,9 +166,7 @@ const CodeTemplatePage = () => {
                 }}
               >
                 <button
-                  onClick={() =>
-                    handleUpdateAndRunCode(template.id, template.code)
-                  }
+                  onClick={() => handleUpdateAndRunCode(template.id, template.code)}
                   style={{
                     padding: '8px 15px',
                     backgroundColor: '#4caf50',
@@ -186,9 +179,7 @@ const CodeTemplatePage = () => {
                   Run
                 </button>
                 <button
-                  onClick={() =>
-                    console.log('Forked template:', template.title)
-                  }
+                  onClick={() => console.log('Forked template:', template.title)}
                   style={{
                     padding: '8px 15px',
                     backgroundColor: '#2196f3',
@@ -205,7 +196,6 @@ const CodeTemplatePage = () => {
           ))}
         </div>
 
-        {/* Terminal */}
         <div
           style={{
             marginTop: '20px',

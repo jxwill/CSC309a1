@@ -145,25 +145,23 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-  {selectedTemplate ? (
-    <Link href={`/codeTemplate/${selectedTemplate.id}`} passHref>
-      <div className="p-4 bg-white shadow rounded cursor-pointer hover:bg-gray-100 transition">
-        <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-        <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
-        <textarea
-          className="w-full h-40 border rounded p-2"
-          value={selectedTemplate.code}
-          readOnly
-        />
-        <p className="text-xs text-gray-500 mt-2">
-          Uploaded on: {new Date(selectedTemplate.createdAt).toLocaleString()}
-        </p>
-      </div>
-    </Link>
-  ) : (
-    <p>Select a template from the sidebar.</p>
-  )}
-</main>
+        {selectedTemplate ? (
+          <div className="p-4 bg-white shadow rounded">
+            <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
+            <textarea
+              className="w-full h-40 border rounded p-2"
+              value={selectedTemplate.code}
+              readOnly
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Uploaded on: {new Date(selectedTemplate.createdAt).toLocaleString()}
+            </p>
+          </div>
+        ) : (
+          <p>Select a template from the sidebar.</p>
+        )}
+      </main>
     </div>
   );
 
