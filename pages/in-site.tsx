@@ -213,6 +213,10 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         {activeTab === "templates" && renderTemplates()}
         {activeTab === "profile" && renderProfile()}
       </div>
+      {/* Footer */}
+      <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">
+        <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
+      </footer>
     </div>
   );
 }

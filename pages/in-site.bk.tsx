@@ -112,9 +112,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200"
-          } hover:bg-blue-500 hover:text-white transition`}
+          className={`px-4 py-2 rounded-lg ${activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200"
+            } hover:bg-blue-500 hover:text-white transition`}
         >
           {tab.charAt(0).toUpperCase() + tab.slice(1)}
         </button>
@@ -132,9 +131,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           {templates.map((template) => (
             <button
               key={template.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
-                selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-              }`}
+              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
+                }`}
               onClick={() => setSelectedTemplate(template)}
             >
               {template.title}

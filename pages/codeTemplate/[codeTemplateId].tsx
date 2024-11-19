@@ -1,218 +1,330 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import { EditorView, basicSetup } from 'codemirror';
+import { javascript } from '@codemirror/lang-javascript';
 
 const CodeTemplatePage = () => {
-  const [codeTemplates, setCodeTemplates] = useState([]);
-  const [terminalOutput, setTerminalOutput] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const router = useRouter();
-  const { codeTemplateId } = router.query;
+    const [codeTemplate, setCodeTemplate] = useState(null);
+    const [terminalOutput, setTerminalOutput] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const router = useRouter();
+    const { codeTemplateId } = router.query;
 
-  // Log when codeTemplateId is available
-  useEffect(() => {
-    if (codeTemplateId) {
-      console.log(`Code Template ID from URL: ${codeTemplateId}`);
-    }
-  }, [codeTemplateId]);
+    const supportedLanguages = ['JavaScript', 'Python', 'Java', 'C', 'C++']; // Add more if needed
+    const editorRef = useRef(null); // Reference for the CodeMirror instance
+    const editorContainer = useRef(null); // Reference for the CodeMirror container
 
-  // Fetch specific code template when codeTemplateId is available
-  useEffect(() => {
-    if (!codeTemplateId) return; // Ensure the parameter is available before making API calls
+    // Fetch the code template
+    useEffect(() => {
+        if (!codeTemplateId) return;
 
-    const fetchCodeTemplate = async () => {
-      try {
-        const response = await fetch(
-          `/api/codeTemplate/show?options=id&info=${codeTemplateId}`,
-          {
-            headers: {
-              Authorization: `Bearer YOUR_AUTH_TOKEN`, // Replace YOUR_AUTH_TOKEN with your actual token
-            },
-          }
-        );
+        const fetchCodeTemplate = async () => {
+            setLoading(true);
+            try {
+                const response = await fetch(
+                    `/api/codeTemplate/show?options=id&info=${codeTemplateId}`
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setCodeTemplate(data[0]);
+                } else {
+                    setError('Failed to fetch code template.');
+                }
+            } catch (err) {
+                console.error(err);
+                setError('Error fetching the code template.');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        if (response.ok) {
-          const data = await response.json();
-          setCodeTemplates([data]); // Set as an array for compatibility with existing logic
-        } else if (response.status === 401) {
-          setError('Unauthorized: No token provided or invalid token.');
-        } else {
-          console.error('Failed to fetch code template');
-          setError('Failed to fetch code template. Please try again later.');
+        fetchCodeTemplate();
+    }, [codeTemplateId]);
+
+    // Initialize CodeMirror
+    useEffect(() => {
+        if (!editorContainer.current || !codeTemplate) return;
+
+        // Prevent re-initialization of CodeMirror
+        if (editorRef.current) {
+            editorRef.current.dispatch({
+                changes: { from: 0, to: editorRef.current.state.doc.length, insert: codeTemplate.code },
+            });
+            return;
         }
-      } catch (error) {
-        console.error('Error fetching code template:', error);
-        setError('Failed to fetch code template. Please check your connection.');
-      } finally {
-        setLoading(false);
-      }
+
+        // Initialize a new CodeMirror instance
+        const editor = new EditorView({
+            doc: codeTemplate.code || '',
+            extensions: [basicSetup, javascript()],
+            parent: editorContainer.current,
+            dispatch: (transaction) => {
+                const updatedCode = transaction.newDoc.toString();
+                setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
+            },
+        });
+
+        editorRef.current = editor; // Save the instance to the ref
+
+        return () => {
+            editor.destroy(); // Clean up on unmount
+            editorRef.current = null;
+        };
+    }, [codeTemplate]);
+
+    const handleLanguageChange = async (newLanguage) => {
+        try {
+            const response = await fetch(
+                `/api/codeTemplate/changeLang?id=${codeTemplate.id}&language=${newLanguage}`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer YOUR_AUTH_TOKEN`,
+                    },
+                    body: JSON.stringify({ language: newLanguage }),
+                }
+            );
+
+            if (response.ok) {
+                const updatedTemplate = await response.json();
+                setCodeTemplate(updatedTemplate); // Update local state with new language
+            } else {
+                alert('Failed to update language. Please try again.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error updating language.');
+        }
     };
 
-    fetchCodeTemplate();
-  }, [codeTemplateId]);
-
-  // Handle code update and execution
-  const handleUpdateAndRunCode = async (id, updatedCode) => {
-    try {
-      const updateResponse = await fetch(`/api/codeTemplate/update?id=${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer YOUR_AUTH_TOKEN`,
-        },
-        body: JSON.stringify({
-          id,
-          code: updatedCode,
-        }),
-      });
-
-      if (!updateResponse.ok) {
-        console.error('Failed to update the code template.');
-        alert('Failed to update the code template. Please try again.');
-        return;
-      }
-
-      const runResponse = await fetch(`/api/codeTemplate/execution?id=${id}`, {
-        headers: {
-          Authorization: `Bearer YOUR_AUTH_TOKEN`,
-        },
-      });
-
-      const result = await runResponse.text();
-      setTerminalOutput(result);
-    } catch (error) {
-      console.error('Error updating and running code:', error);
+    if (loading) {
+        return <div>Loading...</div>;
     }
-  };
 
-  // Handle code changes in the UI
-  const handleCodeChange = (id, newCode) => {
-    setCodeTemplates((prevTemplates) =>
-      prevTemplates.map((template) =>
-        template.id === id ? { ...template, code: newCode } : template
-      )
-    );
-  };
+    if (error) {
+        return <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>;
+    }
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+    if (!codeTemplate) {
+        return <div>No code template found.</div>;
+    }
 
-  if (error) {
-    return <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>;
-  }
-
-  if (codeTemplates.length === 0) {
-    return <div>No code template found.</div>;
-  }
-
-  return (
-    <div style={{ fontFamily: 'Arial, sans-serif' }}>
-      <header
-        style={{
-          backgroundColor: '#2196f3',
-          color: '#fff',
-          padding: '10px 20px',
-          marginBottom: '20px',
-          textAlign: 'center',
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Code Template Manager</h1>
-      </header>
-
-      <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-        <h1>Code Templates</h1>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px',
-          }}
-        >
-          {codeTemplates.map((template) => (
-            <div
-              key={template.id}
-              style={{
-                border: '1px solid #ddd',
-                borderRadius: '5px',
-                padding: '15px',
-                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-                backgroundColor: '#fff',
-              }}
-            >
-              <h1 style={{ margin: '0 0 10px' }}>{template.title}</h1>
-              <p style={{ fontStyle: 'italic', color: '#555' }}>{template.description}</p>
-              <textarea
-                value={template.code}
-                onChange={(e) => handleCodeChange(template.id, e.target.value)}
+    return (
+        <div className=" bg-gradient-to-br from-blue-100 to-blue-300">
+            {/* Header Section */}
+            <header
                 style={{
-                  width: 'calc(100% - 20px)',
-                  margin: '0 auto',
-                  height: '150px',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  padding: '10px',
-                  backgroundColor: '#f9f9f9',
-                  borderRadius: '4px',
-                  border: '1px solid #ddd',
-                  resize: 'none',
-                }}
-              />
-              <div
-                style={{
-                  marginTop: '10px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <button
-                  onClick={() => handleUpdateAndRunCode(template.id, template.code)}
-                  style={{
-                    padding: '8px 15px',
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Run
-                </button>
-                <button
-                  onClick={() => console.log('Forked template:', template.title)}
-                  style={{
-                    padding: '8px 15px',
                     backgroundColor: '#2196f3',
                     color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Fork
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+                    padding: '10px 20px',
+                    marginBottom: '20px',
+                    textAlign: 'center',
+                }}
+            >
+                <h1 style={{ margin: 0 }}>Code Template Manager</h1>
+            </header>
 
-        <div
-          style={{
-            marginTop: '20px',
-            padding: '15px',
-            backgroundColor: '#f0f0f0',
-            borderRadius: '5px',
-            height: '200px',
-            overflowY: 'auto',
-            boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <h3>Terminal Output</h3>
-          <pre>{terminalOutput || 'Terminal output will appear here...'}</pre>
+            <div
+                style={{
+                    padding: '20px',
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                }}
+            >
+                {/* Title and Dropdown Section */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '20px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '8px',
+                        marginBottom: '20px',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    }}
+                >
+                    <div style={{ flex: 1, marginRight: '20px' }}>
+                        <h2
+                            style={{
+                                fontSize: '2rem',
+                                marginBottom: '10px',
+                                color: '#333',
+                            }}
+                        >
+                            {codeTemplate.title}
+                        </h2>
+                        <p
+                            style={{
+                                fontSize: '1rem',
+                                fontStyle: 'italic',
+                                color: '#666',
+                                marginBottom: '15px',
+                            }}
+                        >
+                            {codeTemplate.description}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label
+                            htmlFor="language-select"
+                            style={{
+                                fontWeight: 'bold',
+                                display: 'block',
+                                marginBottom: '10px',
+                                color: '#333',
+                            }}
+                        >
+                            Select Language:
+                        </label>
+                        <select
+                            id="language-select"
+                            value={codeTemplate.language}
+                            onChange={(e) =>
+                                handleLanguageChange(e.target.value)
+                            }
+                            style={{
+                                color: '#333',
+                                padding: '10px',
+                                fontSize: '1rem',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                            }}
+                        >
+                            {supportedLanguages.map((lang) => (
+                                <option key={lang} value={lang}>
+                                    {lang}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Code Editor Section */}
+                <div
+                    ref={editorContainer}
+                    style={{
+                        height: '300px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        color: '#000', // Text color
+                        backgroundColor: '#fff', // White background
+                    }}
+                ></div>
+
+                <div
+                    style={{
+                        marginTop: '10px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        color: 'white',
+                    }}
+                >
+                    <button
+                        onClick={async () => {
+                            try {
+                                // Fetch the code template ID
+                                const codeTemplateId = codeTemplate.id;
+
+                                // Call the execution API endpoint
+                                const response = await fetch(
+                                    `/api/codeTemplate/execution?id=${codeTemplateId}`,
+                                    {
+                                        method: 'GET', // Adjust this to POST if necessary
+                                    }
+                                );
+
+                                // Parse the response JSON
+                                const data = await response.json();
+
+                                // Check if the response is not OK (e.g., HTTP status 400/500)
+                                if (!response.ok) {
+                                    // Set the terminal output to the error message returned by the API
+                                    setTerminalOutput(data.error || 'Execution failed with an unknown error.');
+                                } else {
+                                    // If the response is OK, display the execution output
+                                    setTerminalOutput(data.output || 'Execution completed with no output.');
+                                }
+                            } catch (error) {
+                                console.error('Error executing code:', error);
+                                // Handle any network or unexpected errors
+                                setTerminalOutput(`Error: ${error.message || 'Unknown error occurred.'}`);
+                            }
+                        }}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#4caf50',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Run
+                    </button>
+                    <button
+                        onClick={() => console.log('Fork logic here')}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#2196f3',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        Fork
+                    </button>
+                </div>
+
+                {/* Terminal Output Section */}
+                <div
+                    style={{
+                        marginTop: '20px',
+                        padding: '15px',
+                        backgroundColor: '#f0f0f0',
+                        borderRadius: '5px',
+                        height: '200px',
+                        overflowY: 'auto',
+                        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+                        fontFamily: 'monospace',
+                        whiteSpace: 'pre-wrap',
+                    }}
+                >
+                    <h3 style={{
+                        marginBottom: '10px',
+                        color: 'black',
+                        fontSize: '1.5rem',
+                    }}>Terminal Output</h3>
+                    <pre
+                        style={{
+                            color: terminalOutput.includes('error')
+                                ? 'red'
+                                : 'green',
+                        }}
+                    >
+                        {terminalOutput || 'Terminal output will appear here...'}
+                    </pre>
+                </div>
+            </div>
+
+            <footer
+                style={{
+                    width: '100%',
+                    padding: '10px 0',
+                    backgroundColor: '#2196f3',
+                    color: '#fff',
+                    textAlign: 'center',
+                }}
+            >
+                <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
+            </footer>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default CodeTemplatePage;
