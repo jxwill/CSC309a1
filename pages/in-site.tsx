@@ -25,6 +25,16 @@ interface InSiteProps {
   isVisitor: boolean;
 }
 
+interface BlogPost {
+  id: number;
+  title: string;
+  description: string;
+  content: string;
+  tags: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { req, query } = context;
   const cookies = cookie.parse(req.headers.cookie || "");
@@ -62,6 +72,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [activeTab, setActiveTab] = useState("templates");
   const [templates, setTemplates] = useState<CodeTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -84,6 +96,27 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
     fetchTemplates();
   }, []);
+
+  // fetch blogposts when blogposts tab is active
+  useEffect(() => {
+    if(activeTab === "blogposts"){
+      const fetchBlogPosts = async () => {
+        try {
+          const response = await fetch(`/api/blogposts/getAllBlogposts`);
+          if(response.ok){
+            const data = await response.json();
+            setBlogPosts(data);
+            setSelectedBlogPost(data[0] || null);
+          } else{
+            console.error("Failed to fetch blogposts");
+          }
+        } catch (error){
+          console.error("Error fetching blogposts");
+        }
+      };
+      fetchBlogPosts();
+    }
+  }, [activeTab]);
 
   const handleLogout = async () => {
     await fetch("/api/users/logout", {
@@ -108,7 +141,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   // Render Tabs
   const renderTabs = () => (
     <div className="flex space-x-4 mb-8">
-      {["templates", "profile"].map((tab) => (
+      {["templates", "profile", "blogposts"].map((tab) => (
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
@@ -165,6 +198,46 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     </div>
   );
 
+  // render blogposts
+  const renderBlogPosts = () => (
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-1/4 bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
+          <div className="space-y-2">
+            {blogPosts.map((post) => (
+                <button
+                    key={post.id}
+                    className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
+                        selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => setSelectedBlogPost(post)}
+                >
+                  {post.title}
+                </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {selectedBlogPost ? (
+              <div className="p-4 bg-white shadow rounded">
+                <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
+                <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
+                <p className="text-sm mb-4">{selectedBlogPost.content}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Published on: {new Date(selectedBlogPost.createdAt).toLocaleString()}
+                </p>
+              </div>
+          ) : (
+              <p>Select a blog post from the sidebar.</p>
+          )}
+        </main>
+      </div>
+  );
+
+
   // Render Profile Section
   const renderProfile = () => (
     <section>
@@ -210,6 +283,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         {renderTabs()}
         {activeTab === "templates" && renderTemplates()}
         {activeTab === "profile" && renderProfile()}
+        {activeTab === "blogposts" && renderBlogPosts()}
       </div>
     </div>
   );
