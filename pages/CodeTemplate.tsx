@@ -1,39 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 const CodeTemplatePage = () => {
   const [codeTemplates, setCodeTemplates] = useState([]);
   const [terminalOutput, setTerminalOutput] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(''); // Added error state for authentication errors
+  const [error, setError] = useState('');
+  const router = useRouter();
+  const { codeTemplateId } = router.query; // Extract parameter from URL
+  console.log(codeTemplateId);
 
   useEffect(() => {
-    // Fetch code template data from the API
-    const fetchCodeTemplates = async () => {
+    if (!codeTemplateId) return; // Ensure the parameter is available before making API calls
+
+    // Fetch specific code template data from the API
+    const fetchCodeTemplate = async () => {
       try {
-        const response = await fetch('/api/codeTemplate/show?options=title&info=aaa', {
-          headers: {
-            Authorization: `Bearer YOUR_AUTH_TOKEN`, // Adjust the token dynamically as needed
-          },
-        });
+        const response = await fetch(
+          `/api/codeTemplate/show?options=id&info=${codeTemplateId}`,
+          {
+            headers: {
+              Authorization: `Bearer YOUR_AUTH_TOKEN`, // Adjust the token dynamically as needed
+            },
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
-          setCodeTemplates(data);
+          setCodeTemplates([data]); // Set as an array for compatibility with existing logic
         } else if (response.status === 401) {
           setError('Unauthorized: No token provided or invalid token.');
         } else {
-          console.error('Failed to fetch code templates');
+          console.error('Failed to fetch code template');
         }
       } catch (error) {
-        console.error('Error fetching code templates:', error);
-        setError('Failed to fetch code templates. Please check your connection.');
+        console.error('Error fetching code template:', error);
+        setError('Failed to fetch code template. Please check your connection.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCodeTemplates();
-  }, []);
+    fetchCodeTemplate();
+  }, [codeTemplateId]);
 
   const handleUpdateAndRunCode = async (id, updatedCode) => {
     try {
@@ -42,7 +51,7 @@ const CodeTemplatePage = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer YOUR_AUTH_TOKEN`, // Add authentication header
+          Authorization: `Bearer YOUR_AUTH_TOKEN`,
         },
         body: JSON.stringify({
           id,
@@ -59,7 +68,7 @@ const CodeTemplatePage = () => {
       // After successful update, execute the updated code
       const runResponse = await fetch(`/api/codeTemplate/execution?id=${id}`, {
         headers: {
-          Authorization: `Bearer YOUR_AUTH_TOKEN`, // Add authentication header
+          Authorization: `Bearer YOUR_AUTH_TOKEN`,
         },
       });
       const result = await runResponse.text();
@@ -86,7 +95,7 @@ const CodeTemplatePage = () => {
   }
 
   if (codeTemplates.length === 0) {
-    return <div>No code templates found.</div>;
+    return <div>No code template found.</div>;
   }
 
   return (
@@ -140,7 +149,7 @@ const CodeTemplatePage = () => {
                   handleCodeChange(template.id, e.target.value)
                 }
                 style={{
-                  width: 'calc(100% - 20px)', // Leave padding around
+                  width: 'calc(100% - 20px)',
                   margin: '0 auto',
                   height: '150px',
                   fontFamily: 'monospace',

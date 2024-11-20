@@ -14,50 +14,53 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  firstname     String
-  lastname      String
-  email         String         @unique
-  password      String
-  role          String         @default("User")
-  avatar        String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  banned        Boolean        @default(false)
-  // Relations
-  codeTemplates CodeTemplate[]
-  blogPosts     BlogPost[]
-  comments      Comment[]
-  reports       Report[]
+  id        Int      @id @default(autoincrement())
+  firstname String
+  lastname  String
+  email     String   @unique
+  password  String
+  role      String   @default("User")
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  banned    Boolean  @default(false)
 
-  Rating Rating[]
+  // Relations
+  codeTemplates       CodeTemplate[] // Templates authored by the user
+  forkedCodeTemplates CodeTemplate[] @relation("ForkedCodeTemplates") // Templates forked by the user
+  blogPosts           BlogPost[]
+  comments            Comment[]
+  reports             Report[]
+  Rating              Rating[]
 }
 
 model CodeTemplate {
-  id          Int        @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   description String
   tags        String
   code        String
   language    String
-  isForked    Boolean    @default(false)
-  author      User       @relation(fields: [authorId], references: [id])
+  isForked    Boolean  @default(false)
+  author      User     @relation(fields: [authorId], references: [id]) // Original author
   authorId    Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  forkedBy    User[]   @relation("ForkedCodeTemplates") // Users who forked this template
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
-  blogPosts   BlogPost[]
+  blogPosts BlogPost[]
 }
 
 model BlogPost {
-  id           Int       @id @default(autoincrement())
-  title        String
-  description  String
-  content      String
-  tags         String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  hidden       Boolean   @default(false) // New field to indicate if a post is hidden
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  content     String
+  tags        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  hidden      Boolean  @default(false) // New field to indicate if a post is hidden
 
   // Relations
   user          User           @relation(fields: [userId], references: [id])
@@ -87,15 +90,15 @@ model Comment {
 }
 
 model Report {
-  id              Int       @id @default(autoincrement())
-  reason          String
-  additionalInfo  String?
-  user            User      @relation(fields: [userId], references: [id])
-  userId          Int
-  blogPost        BlogPost? @relation(fields: [blogPostId], references: [id])
-  blogPostId      Int?
-  comment         Comment?  @relation(fields: [commentId], references: [id])
-  commentId       Int?
+  id             Int       @id @default(autoincrement())
+  reason         String
+  additionalInfo String?
+  user           User      @relation(fields: [userId], references: [id])
+  userId         Int
+  blogPost       BlogPost? @relation(fields: [blogPostId], references: [id])
+  blogPostId     Int?
+  comment        Comment?  @relation(fields: [commentId], references: [id])
+  commentId      Int?
 
   @@unique([blogPostId, commentId]) // Ensures that a report targets either a BlogPost or a Comment, not both
 }
