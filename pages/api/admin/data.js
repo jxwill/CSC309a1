@@ -5,7 +5,6 @@ export default async function handler(req, res) {
   async function next() {
     try {
       if (req.method === 'GET') {
-        res.setHeader("Cache-Control", "no-store");
         console.log("Fetching admin data...");
 
         // Fetch all users

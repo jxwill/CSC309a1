@@ -56,7 +56,6 @@ export default function ProfilePage({ user, token }: ProfileProps) {
   );
   const [message, setMessage] = useState<string>("");
   const router = useRouter();
-
   useEffect(() => {
     if (router.query.showPopup) {
       alert("You need to register to see the profile page!");
