@@ -148,7 +148,6 @@ const EmptyCodeTemplatePage = () => {
                         onChange={(e) =>
                             handleInputChange('description', e.target.value)
                         }
-                        rows="4"
                         style={{
                             width: '100%',
                             padding: '10px',

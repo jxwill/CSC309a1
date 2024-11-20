@@ -43,6 +43,7 @@ const CodeTemplatePage = () => {
     }, [codeTemplateId]);
 
     // Initialize CodeMirror
+    // Initialize CodeMirror
     useEffect(() => {
         if (!editorContainer.current || !codeTemplate) return;
 
@@ -57,12 +58,17 @@ const CodeTemplatePage = () => {
         // Initialize a new CodeMirror instance
         const editor = new EditorView({
             doc: codeTemplate.code || '',
-            extensions: [basicSetup, javascript()],
+            extensions: [
+                basicSetup,
+                javascript(),
+                EditorView.updateListener.of((update) => {
+                    if (update.docChanged) {
+                        const updatedCode = update.state.doc.toString();
+                        setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
+                    }
+                }),
+            ],
             parent: editorContainer.current,
-            dispatch: (transaction) => {
-                const updatedCode = transaction.newDoc.toString();
-                setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
-            },
         });
 
         editorRef.current = editor; // Save the instance to the ref
