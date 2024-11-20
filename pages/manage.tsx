@@ -20,6 +20,13 @@ interface BlogPost {
   userId: number;
 }
 
+interface CodeTemplate {
+  id: number;
+  title: string;
+  description: string;
+}
+
+
 interface Report {
   id: number;
   reason: string;
@@ -61,12 +68,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 export default function ManagePage({ token }: ManagePageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [codeTemplates, setCodeTemplates] = useState<CodeTemplate[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [error, setError] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("users");
   const router = useRouter();
 
   useEffect(() => {
+    console.log(token,"-------------");
     const fetchAdminData = async () => {
       try {
         const response = await fetch("/api/admin/data", {
@@ -79,10 +88,11 @@ export default function ManagePage({ token }: ManagePageProps) {
           });
 
         if (response.ok) {
-          const { users, blogPosts, reports } = await response.json();
+          const { users, blogPosts, reports, codeTemplates} = await response.json();
           setUsers(users);
           setBlogPosts(blogPosts);
           setReports(reports);
+          setCodeTemplates(codeTemplates);
         } else {
           throw new Error("Failed to fetch admin data.");
         }
@@ -124,6 +134,31 @@ export default function ManagePage({ token }: ManagePageProps) {
       alert("Failed to delete blog post.");
     }
   };
+
+  const handleDeleteCodeTemplate = async (templateId: number) => {
+    if (!window.confirm("Are you sure you want to delete this code template?")) return;
+    try {
+      const response = await fetch(`/api/codeTemplate/${templateId}/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (response.ok) {
+        alert("Code template deleted successfully.");
+        router.reload();
+      } else {
+        throw new Error("Failed to delete code template.");
+      }
+    } catch (error) {
+      console.error("Error deleting code template:", error);
+      alert("Failed to delete code template.");
+    }
+  };
+  
+
 
   const handleRoleUpdate = async (email: string, role: string) => {
     try {
@@ -220,9 +255,43 @@ export default function ManagePage({ token }: ManagePageProps) {
     }
   };
 
+  const renderCodeTemplates = () => (
+    <section>
+      <h2 className="text-2xl font-semibold mb-4">Manage Code Templates</h2>
+      <table className="min-w-full bg-white rounded shadow-md">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {codeTemplates.map((template) => (
+            <tr key={template.id}>
+              <td>{template.id}</td>
+              <td>{template.title}</td>
+              <td>{template.description}</td>
+              <td>
+                <button
+                  onClick={() => handleDeleteCodeTemplate(template.id)}
+                  className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+  
+
   const renderTabs = () => (
     <div className="flex space-x-4 mb-8">
-      {["users", "blogPosts", "reports"].map((tab) => (
+      {["users", "blogPosts", "reports", "codeTemplates"].map((tab) => (
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
@@ -312,12 +381,23 @@ export default function ManagePage({ token }: ManagePageProps) {
               <td>{post.id}</td>
               <td>{post.title}</td>
               <td>{post.hidden ? "Yes" : "No"}</td>
-              <td>
+              <td className="flex space-x-2">
+                {/* Delete Blog Post Button */}
                 <button
                   onClick={() => handleDeleteBlogPost(post.id)}
                   className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
                 >
                   Delete
+                </button>
+  
+                {/* Hide/Unhide Blog Post Button */}
+                <button
+                  onClick={() => handleHideBlogPost(post.id, !post.hidden)}
+                  className={`px-3 py-1 rounded-lg text-sm font-semibold shadow hover:shadow-md transition duration-200 ${
+                    post.hidden ? "bg-green-500 text-white" : "bg-blue-500 text-white"
+                  }`}
+                >
+                  {post.hidden ? "Unhide" : "Hide"}
                 </button>
               </td>
             </tr>
@@ -326,6 +406,7 @@ export default function ManagePage({ token }: ManagePageProps) {
       </table>
     </section>
   );
+  
 
   const renderReports = () => (
     <section>
@@ -366,6 +447,7 @@ export default function ManagePage({ token }: ManagePageProps) {
       {activeTab === "users" && renderUsers()}
       {activeTab === "blogPosts" && renderBlogPosts()}
       {activeTab === "reports" && renderReports()}
+      {activeTab === "codeTemplates" && renderCodeTemplates()}
       <button onClick={handleLogout} className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
         Logout
       </button>

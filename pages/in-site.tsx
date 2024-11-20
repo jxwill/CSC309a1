@@ -66,8 +66,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-
-  if(user || user.role ==="Admin"){
+  console.log(user)
+  if(user && user.role ==="Admin"){
     router.push("/manage");
   }
 

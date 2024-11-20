@@ -38,6 +38,16 @@ export default async function handler(req, res) {
           },
         });
 
+        // Fetch codeTemplates
+        const codeTemplates = await prisma.codeTemplate.findMany({
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            createdAt: true,
+          },
+        });
+
         // Fetch all reports
         const reports = await prisma.report.findMany({
           include: {
@@ -54,7 +64,7 @@ export default async function handler(req, res) {
         });
 
         // Send the aggregated data as a response
-        res.status(200).json({ users, blogPosts, reports });
+        res.status(200).json({ users, blogPosts, reports, codeTemplates});
       } else {
         // Method not allowed
         res.status(405).json({ error: "Method Not Allowed" });
