@@ -168,38 +168,135 @@ const CodeTemplatePage = () => {
                         </p>
                     </div>
 
-                    <div>
-                        <label
-                            htmlFor="language-select"
-                            style={{
-                                fontWeight: 'bold',
-                                display: 'block',
-                                marginBottom: '10px',
-                                color: '#333',
-                            }}
-                        >
-                            Select Language:
-                        </label>
-                        <select
-                            id="language-select"
-                            value={codeTemplate.language}
-                            onChange={(e) =>
-                                handleLanguageChange(e.target.value)
-                            }
-                            style={{
-                                color: '#333',
-                                padding: '10px',
-                                fontSize: '1rem',
-                                borderRadius: '4px',
-                                border: '1px solid #ddd',
-                            }}
-                        >
-                            {supportedLanguages.map((lang) => (
-                                <option key={lang} value={lang}>
-                                    {lang}
-                                </option>
-                            ))}
-                        </select>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <div style={{ marginRight: '20px' }}>
+                            <label
+                                htmlFor="language-select"
+                                style={{
+                                    fontWeight: 'bold',
+                                    display: 'block',
+                                    marginBottom: '10px',
+                                    color: '#333',
+                                }}
+                            >
+                                Select Language:
+                            </label>
+                            <select
+                                id="language-select"
+                                value={codeTemplate.language}
+                                onChange={(e) => handleLanguageChange(e.target.value)}
+                                style={{
+                                    color: '#333',
+                                    padding: '10px',
+                                    fontSize: '1rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ddd',
+                                }}
+                            >
+                                {supportedLanguages.map((lang) => (
+                                    <option key={lang} value={lang}>
+                                        {lang}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <style jsx>{`
+                                .run-button {
+                                    padding: 10px 20px;
+                                    background-color: #4caf50;
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    transition: transform 0.2s ease, background-color 0.3s ease;
+                                }
+
+                                .run-button:hover {
+                                    background-color: #45a049;
+                                    transform: scale(1.1); /* Slightly larger */
+                                }
+                                
+                                .fork-button {
+                                    padding: 10px 20px;
+                                    background-color: #2196f3;
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    transition: transform 0.2s ease, background-color 0.3s ease;
+                                }
+
+                                .fork-button:hover {
+                                    background-color: #1e88e5;
+                                    transform: scale(1.1); /* Slightly larger */
+                                }
+                                    
+                                .save-button {
+                                    padding: 10px 20px;
+                                    background-color: #EDB05E; /* Vibrant green for a positive action */
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+                                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+                                }
+
+                                .save-button:hover {
+                                    background-color: #EB9A2C; /* Darker green for hover */
+                                    transform: scale(1.1); /* Slightly larger */
+                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow becomes more pronounced */
+                                }
+                            `}</style>
+
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const codeTemplateId = codeTemplate.id;
+                                        const response = await fetch(
+                                            `/api/codeTemplate/execution?id=${codeTemplateId}`
+                                        );
+                                        const data = await response.json();
+                                        if (!response.ok) {
+                                            setTerminalOutput(
+                                                data.error || 'Execution failed with an unknown error.'
+                                            );
+                                        } else {
+                                            setTerminalOutput(
+                                                data.output || 'Execution completed with no output.'
+                                            );
+                                        }
+                                    } catch (error) {
+                                        console.error('Error executing code:', error);
+                                        setTerminalOutput(
+                                            `Error: ${error.message || 'Unknown error occurred.'}`
+                                        );
+                                    }
+                                }}
+                                className="run-button"
+                            >
+                                Run
+                            </button>
+                            <button
+                                onClick={() => console.log('Fork logic here')}
+                                className="fork-button"
+                            >
+                                Fork
+                            </button>
+                            <button
+                                onClick={() => console.log('Save logic here')}
+                                className='save-button'
+                            >
+                                Save
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -224,61 +321,7 @@ const CodeTemplatePage = () => {
                         color: 'white',
                     }}
                 >
-                    <button
-                        onClick={async () => {
-                            try {
-                                // Fetch the code template ID
-                                const codeTemplateId = codeTemplate.id;
 
-                                // Call the execution API endpoint
-                                const response = await fetch(
-                                    `/api/codeTemplate/execution?id=${codeTemplateId}`,
-                                    {
-                                        method: 'GET', // Adjust this to POST if necessary
-                                    }
-                                );
-
-                                // Parse the response JSON
-                                const data = await response.json();
-
-                                // Check if the response is not OK (e.g., HTTP status 400/500)
-                                if (!response.ok) {
-                                    // Set the terminal output to the error message returned by the API
-                                    setTerminalOutput(data.error || 'Execution failed with an unknown error.');
-                                } else {
-                                    // If the response is OK, display the execution output
-                                    setTerminalOutput(data.output || 'Execution completed with no output.');
-                                }
-                            } catch (error) {
-                                console.error('Error executing code:', error);
-                                // Handle any network or unexpected errors
-                                setTerminalOutput(`Error: ${error.message || 'Unknown error occurred.'}`);
-                            }
-                        }}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#4caf50',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Run
-                    </button>
-                    <button
-                        onClick={() => console.log('Fork logic here')}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#2196f3',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Fork
-                    </button>
                 </div>
 
                 {/* Terminal Output Section */}

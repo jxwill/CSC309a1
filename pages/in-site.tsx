@@ -112,9 +112,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200"
-          } hover:bg-blue-500 hover:text-white transition`}
+          className={`px-4 py-2 rounded-lg ${activeTab === tab ? "bg-blue-600 text-white" : "bg-gray-200"
+            } hover:bg-blue-500 hover:text-white transition`}
         >
           {tab.charAt(0).toUpperCase() + tab.slice(1)}
         </button>
@@ -132,9 +131,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           {templates.map((template) => (
             <button
               key={template.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
-                selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-              }`}
+              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
+                }`}
               onClick={() => setSelectedTemplate(template)}
             >
               {template.title}
@@ -145,25 +143,25 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
       {/* Main Content */}
       <main className="flex-1 p-6">
-  {selectedTemplate ? (
-    <Link href={`/codeTemplate/${selectedTemplate.id}`} passHref>
-      <div className="p-4 bg-white shadow rounded cursor-pointer hover:bg-gray-100 transition">
-        <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-        <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
-        <textarea
-          className="w-full h-40 border rounded p-2"
-          value={selectedTemplate.code}
-          readOnly
-        />
-        <p className="text-xs text-gray-500 mt-2">
-          Uploaded on: {new Date(selectedTemplate.createdAt).toLocaleString()}
-        </p>
-      </div>
-    </Link>
-  ) : (
-    <p>Select a template from the sidebar.</p>
-  )}
-</main>
+        {selectedTemplate ? (
+          <Link href={`/codeTemplate/${selectedTemplate.id}`} passHref>
+            <div className="p-4 bg-white shadow rounded cursor-pointer hover:bg-gray-100 transition">
+              <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
+              <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
+              <textarea
+                className="w-full h-40 border rounded p-2"
+                value={selectedTemplate.code}
+                readOnly
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Uploaded on: {new Date(selectedTemplate.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <p>Select a template from the sidebar.</p>
+        )}
+      </main>
     </div>
   );
 
@@ -212,6 +210,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         {renderTabs()}
         {activeTab === "templates" && renderTemplates()}
         {activeTab === "profile" && renderProfile()}
+
       </div>
       {/* Footer */}
       <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">

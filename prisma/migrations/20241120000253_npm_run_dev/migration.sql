@@ -82,6 +82,14 @@ CREATE TABLE "Rating" (
 );
 
 -- CreateTable
+CREATE TABLE "_ForkedCodeTemplates" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+    CONSTRAINT "_ForkedCodeTemplates_A_fkey" FOREIGN KEY ("A") REFERENCES "CodeTemplate" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "_ForkedCodeTemplates_B_fkey" FOREIGN KEY ("B") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
 CREATE TABLE "_BlogPostToCodeTemplate" (
     "A" INTEGER NOT NULL,
     "B" INTEGER NOT NULL,
@@ -94,6 +102,12 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Report_blogPostId_commentId_key" ON "Report"("blogPostId", "commentId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "_ForkedCodeTemplates_AB_unique" ON "_ForkedCodeTemplates"("A", "B");
+
+-- CreateIndex
+CREATE INDEX "_ForkedCodeTemplates_B_index" ON "_ForkedCodeTemplates"("B");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "_BlogPostToCodeTemplate_AB_unique" ON "_BlogPostToCodeTemplate"("A", "B");
