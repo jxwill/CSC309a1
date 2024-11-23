@@ -1,4 +1,4 @@
-import prisma from "../../../utils/db";
+import prisma from "utils/db";
 
 export default async function handler(req, res) {
     const { title, content, tags, codeTemplate } = req.query;
