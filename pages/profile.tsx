@@ -10,6 +10,20 @@ interface UserProfile {
   avatar: string;
 }
 
+interface BlogPost {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
+interface CodeTemplate {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
 interface ProfileProps {
   user: UserProfile | null;
   token: string | null;
@@ -32,7 +46,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     });
 
     if (response.status === 401) {
-      // Redirect to homepage with a query parameter to show the popup
       return {
         redirect: {
           destination: "/?showPopup=true",
@@ -55,12 +68,47 @@ export default function ProfilePage({ user, token }: ProfileProps) {
     user || { firstname: "Visitor", lastname: "", email: "guest@example.com", avatar: "" }
   );
   const [message, setMessage] = useState<string>("");
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [codeTemplates, setCodeTemplates] = useState<CodeTemplate[]>([]);
   const router = useRouter();
+
   useEffect(() => {
-    if (router.query.showPopup) {
-      alert("You need to register to see the profile page!");
-    }
-  }, [router.query]);
+    if (!token) return;
+
+    const fetchUserData = async () => {
+      try {
+        const blogResponse = await fetch(`/api/blogPosts/user`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const templateResponse = await fetch(`/api/codeTemplate/user`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (blogResponse.ok) {
+          const blogs = await blogResponse.json();
+          setBlogPosts(blogs);
+        }
+
+        if (templateResponse.ok) {
+          const templates = await templateResponse.json();
+          setCodeTemplates(templates);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,57 +145,105 @@ export default function ProfilePage({ user, token }: ProfileProps) {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-purple-100 to-purple-300">
-      <h1 className="text-3xl font-bold mb-6">User Profile</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-purple-300 flex flex-col items-center">
+      <h1 className="text-4xl font-bold mt-8">User Profile</h1>
 
-      {formData.avatar ? (
-        <img
-          src={formData.avatar}
-          alt="Avatar"
-          className="w-24 h-24 rounded-full mb-4"
-        />
-      ) : (
-        <div className="w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center">
-          No Avatar
+      <div className="w-full max-w-4xl mt-6 p-6 bg-white shadow-lg rounded-lg">
+        {/* User Profile */}
+        <div className="flex items-center space-x-6 mb-6">
+          <div>
+            {formData.avatar ? (
+              <img src={formData.avatar} alt="Avatar" className="w-24 h-24 rounded-full shadow-lg" />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold">
+                {formData.firstname.charAt(0)}
+              </div>
+            )}
+          </div>
+          <div>
+            {!isEditing ? (
+              <>
+                <p className="text-lg font-semibold">Name: {formData.firstname} {formData.lastname}</p>
+                <p className="text-sm text-gray-600">Email: {formData.email}</p>
+                {token && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg mt-4"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input
+                  name="firstname"
+                  value={formData.firstname}
+                  onChange={handleChange}
+                  className="w-full p-3 border rounded"
+                  placeholder="First Name"
+                />
+                <input
+                  name="lastname"
+                  value={formData.lastname}
+                  onChange={handleChange}
+                  className="w-full p-3 border rounded"
+                  placeholder="Last Name"
+                />
+                <button type="submit" className="w-full p-3 bg-green-600 text-white rounded-lg">
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="w-full p-3 bg-red-600 text-white rounded-lg"
+                >
+                  Cancel
+                </button>
+              </form>
+            )}
+          </div>
         </div>
-      )}
 
-      {!isEditing ? (
-        <>
-          <p>First Name: {formData.firstname}</p>
-          <p>Last Name: {formData.lastname}</p>
-          <p>Email: {formData.email}</p>
-          {token && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg mt-4"
-            >
-              Edit Profile
-            </button>
+        {/* Blog Posts Section */}
+        <section className="mt-8">
+          <h2 className="text-2xl font-bold mb-4 border-b pb-2">Your Blog Posts</h2>
+          {blogPosts.length > 0 ? (
+            <div className="space-y-4">
+              {blogPosts.map((post) => (
+                <div key={post.id} className="p-4 bg-gray-100 rounded shadow-md">
+                  <h3 className="text-lg font-bold">{post.title}</h3>
+                  <p className="text-sm text-gray-700">{post.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Posted on: {new Date(post.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No blog posts to display.</p>
           )}
-        </>
-      ) : (
-        <form onSubmit={handleSubmit} className="w-80 space-y-4">
-          <input
-            name="firstname"
-            value={formData.firstname}
-            onChange={handleChange}
-            className="w-full p-3 border rounded"
-          />
-          <input
-            name="lastname"
-            value={formData.lastname}
-            onChange={handleChange}
-            className="w-full p-3 border rounded"
-          />
-          <button type="submit" className="w-full p-3 bg-green-600 text-white rounded-lg">
-            Update Profile
-          </button>
-          <button onClick={() => setIsEditing(false)} className="w-full p-3 bg-red-600 text-white rounded-lg mt-2">
-            Cancel
-          </button>
-        </form>
-      )}
+        </section>
+
+        {/* Code Templates Section */}
+        <section className="mt-8">
+          <h2 className="text-2xl font-bold mb-4 border-b pb-2">Your Code Templates</h2>
+          {codeTemplates.length > 0 ? (
+            <div className="space-y-4">
+              {codeTemplates.map((template) => (
+                <div key={template.id} className="p-4 bg-gray-100 rounded shadow-md">
+                  <h3 className="text-lg font-bold">{template.title}</h3>
+                  <p className="text-sm text-gray-700">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created on: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No code templates to display.</p>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

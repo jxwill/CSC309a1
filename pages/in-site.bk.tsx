@@ -25,6 +25,16 @@ interface InSiteProps {
   isVisitor: boolean;
 }
 
+interface BlogPost {
+  id: number;
+  title: string;
+  description: string;
+  content: string;
+  tags: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { req, query } = context;
   const cookies = cookie.parse(req.headers.cookie || "");
@@ -62,6 +72,10 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [activeTab, setActiveTab] = useState("templates");
   const [templates, setTemplates] = useState<CodeTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
+
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [selectedBlogPosts, setSelectedBlogPosts] = useState<CodeTemplate | null>(null);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
@@ -84,6 +98,35 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
     fetchTemplates();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "blogPosts") {
+      const fetchBlogPosts = async () => {
+        try {
+          const response = await fetch("/api/blogpost/getAllBlogposts", {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setBlogPosts(data);
+            setSelectedBlogPosts(data[0] || null);
+          } else {
+            console.error("Failed to fetch blog posts");
+          }
+        } catch (error) {
+          console.error("Error fetching blog posts:", error);
+        }
+      };
+
+      fetchBlogPosts();
+    }
+  }, [activeTab]);
+
+
+
 
   const handleLogout = async () => {
     await fetch("/api/users/logout", {
@@ -108,7 +151,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   // Render Tabs
   const renderTabs = () => (
     <div className="flex space-x-4 mb-8">
-      {["templates", "profile"].map((tab) => (
+      {["templates", "profile", "blogPosts"].map((tab) => (
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
@@ -163,6 +206,39 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     </div>
   );
 
+// render blog posts
+  const renderBlogPosts = () => (
+      <div className="space-y-4">
+        {blogPosts.length > 0 ? (
+            blogPosts.map((post) => (
+                <div key={post.id} className="p-4 bg-white shadow rounded">
+                  <h3 className="text-lg font-bold">{post.title}</h3>
+                  <p className="text-sm text-gray-600 mb-2">{post.description}</p>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {post.tags.split(",").map((tag, index) => (
+                        <span
+                            key={index}
+                            className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full"
+                        >
+                #{tag.trim()}
+              </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Published: {new Date(post.createdAt).toLocaleDateString()} | Last Updated:{" "}
+                    {new Date(post.updatedAt).toLocaleDateString()}
+                  </p>
+                  <Link href={`/blog/${post.id}`}>
+                    <a className="mt-2 inline-block text-blue-600 hover:underline">Read more</a>
+                  </Link>
+                </div>
+            ))
+        ) : (
+            <p>No blog posts available.</p>
+        )}
+      </div>
+  );
+
   // Render Profile Section
   const renderProfile = () => (
     <section>
@@ -208,10 +284,13 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         {renderTabs()}
         {activeTab === "templates" && renderTemplates()}
         {activeTab === "profile" && renderProfile()}
+        {activeTab === "blogPosts" && renderBlogPosts()}
       </div>
     </div>
   );
 }
+
+
 
 
 
