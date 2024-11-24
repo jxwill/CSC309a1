@@ -7,7 +7,7 @@ export default async function handler(req, res) {
       const { id, hide } = req.body;
 
       // Log incoming request data to verify structure
-      console.log("Received data:", { id, hide });
+      //console.log("Received data:", { id, hide });
 
       if (typeof id !== 'number' || typeof hide !== 'boolean') {
         // Validate that id is a number and hide is a boolean
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
           data: { hidden: hide },
         });
 
-        console.log("Update successful:", updatedContent); // Log successful update
+        //console.log("Update successful:", updatedContent); // Log successful update
         res.status(200).json(updatedContent);
       } catch (error) {
         console.error("Error updating content visibility:", error);

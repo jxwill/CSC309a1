@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   async function next() {
     try {
       if (req.method === 'GET') {
-        console.log("Fetching admin data...");
+        //console.log("Fetching admin data...");
 
         // Fetch all users
         const users = await prisma.user.findMany({

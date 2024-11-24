@@ -75,7 +75,7 @@ export default function ManagePage({ token }: ManagePageProps) {
   const router = useRouter();
 
   useEffect(() => {
-    console.log(token,"-------------");
+    //console.log(token,"-------------");
     const fetchAdminData = async () => {
       try {
         const response = await fetch("/api/admin/data", {

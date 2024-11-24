@@ -51,7 +51,7 @@ export default function RegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      console.log(response);
+      //console.log(response);
 
       if (!response.ok) {
         throw new Error("Registration failed. Email might already be in use.");
