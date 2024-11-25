@@ -2,8 +2,64 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router'; // For navigation
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import cookie from "cookie";
+import { GetServerSideProps } from "next";
+interface UserProfile {
+    id: number;
+    firstname: string;
+    lastname: string;
+    email: string;
+  }
+interface template {
+    token: string | null;
+    user:  UserProfile;
+  }
 
-const EmptyCodeTemplatePage = () => {
+
+  export const getServerSideProps: GetServerSideProps = async (context) => {
+    const { req } = context;
+    const cookies = cookie.parse(req.headers.cookie || "");
+    const token = cookies.token || null;
+  
+    if (!token) {
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+  
+    try {
+      // Fetch user basic information
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch user profile");
+      }
+  
+      const user = await response.json();
+      console.log(1);
+  
+      return { props: { user, token } };
+    } catch (error) {
+      console.error("Error fetching profile data:", error);
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+  };
+
+const EmptyCodeTemplatePage = ({user, token }: template) => {
+    console.log("line61",user,token);
+
     const [codeTemplate, setCodeTemplate] = useState({
         title: '',
         description: '',
