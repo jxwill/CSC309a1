@@ -147,9 +147,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
-          } hover:bg-blue-500 hover:text-white transition`}
+          className={`px-4 py-2 rounded-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
+            } hover:bg-blue-500 hover:text-white transition`}
         >
           {tab.label}
         </button>
@@ -165,9 +164,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           {templates.map((template) => (
             <button
               key={template.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
-                selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-              }`}
+              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
+                }`}
               onClick={() => setSelectedTemplate(template)}
             >
               {template.title}
@@ -192,6 +190,12 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               value={selectedTemplate.code}
               readOnly
             />
+            <button
+              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+            >
+              View Template
+            </button>
           </div>
         ) : (
           <p>Select a template from the sidebar.</p>
@@ -208,9 +212,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           {blogPosts.map((post) => (
             <button
               key={post.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
-                selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-              }`}
+              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                }`}
               onClick={() => setSelectedBlogPost(post)}
             >
               {post.title}
@@ -230,6 +233,12 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           <div className="p-4 bg-white shadow rounded">
             <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
             <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
+            <button
+              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+            >
+              View Blog
+            </button>
           </div>
         ) : (
           <p>Select a blog post from the sidebar.</p>
