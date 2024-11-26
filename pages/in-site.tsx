@@ -81,11 +81,41 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [searchBy, setSearchBy] = useState("title");
   const [searchInput, setSearchInput] = useState("");
 
-  const handleSearch = () => {
-    console.log("Search By:", searchBy);
-    console.log("Search Input:", searchInput);
+  const handleSearch = async () => {
+    console.log(`Searching for "${searchInput}" by "${searchBy}"`);
 
-    router.
+    if (!searchInput.trim()) {
+      alert("Please enter a search query.");
+      return;
+    }
+
+    // Construct API URL
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/codeTemplate/show`;
+
+    try {
+      // Make the API request
+      const response = await fetch(`${apiUrl}?options=${searchBy}&info=${searchInput.trim()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Check if the response is successful
+      if (!response.ok) {
+        throw new Error("Failed to fetch results");
+      }
+
+      // Parse the JSON response
+      const data = await response.json();
+      console.log("API Response:", data); // Log the API response for debugging
+
+      // Update the templates or results state
+      setTemplates(data.templates || []); // Assuming API returns `templates`
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      setTemplates([]); // Clear results in case of an error
+    }
   };
 
   if (user && user.role === "Admin") {
@@ -100,6 +130,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           const data = await response.json();
           setTemplates(data);
           setSelectedTemplate(data[0] || null);
+
         }
       } catch (error) {
         console.error("Error fetching templates:", error);
@@ -241,11 +272,30 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               readOnly
             />
             <p className="bottom-4 right-4 text-sm text-gray-500">
-              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()} {/* Display creation date */}
+              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
             </p>
           </div>
         ) : (
-          <p>Select a template from the sidebar.</p>
+          <div className="space-y-4">
+            {templates && templates.length > 0 ? (
+              templates.map((template) => (
+                <div key={template.id} className="p-4 bg-white shadow rounded">
+                  <h3 className="text-lg font-bold">{template.title}</h3>
+                  <p className="text-sm text-gray-600">{template.description}</p>
+                  <textarea
+                    className="w-full h-20 border rounded mt-2 p-2"
+                    value={template.code}
+                    readOnly
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center">No templates available.</p>
+            )}
+          </div>
         )}
       </main>
     </div>
