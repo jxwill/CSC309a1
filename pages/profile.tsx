@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import cookie from "cookie";
+import { useRouter } from 'next/router';
 
 interface UserProfile {
   id: number;
@@ -73,6 +74,9 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [codeTemplates, setCodeTemplates] = useState<CodeTemplate[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
+  const [forkedTemplates, setForkedTemplates] = useState<CodeTemplate[]>([]);
+  const [originalTemplates, setOriginalTemplates] = useState<CodeTemplate[]>([]);
   console.log(user, token);
 
   useEffect(() => {
@@ -82,9 +86,9 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
       return;
     }
     console.log(5);
-  
+
     console.log("Fetching user content for ID:", user.id); // Log user ID
-  
+
     const fetchUserContent = async () => {
       console.log(6);
       setLoading(true);
@@ -99,20 +103,24 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
             cache: "no-store",
           }
         );
-  
+
         const data = await response.json();
         setBlogPosts(data.blogPosts || []);
         setCodeTemplates(data.codeTemplates || []);
+        const allTemplates = data.codeTemplates || [];
+
+        setForkedTemplates(allTemplates.filter((template) => template.isForked));
+        setOriginalTemplates(allTemplates.filter((template) => !template.isForked));
       } catch (error) {
         console.error("Error fetching user content:", error);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchUserContent();
   }, [user?.id, token]);
-  
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
@@ -154,13 +162,37 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
 
         {/* Code Templates Section */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Code Templates</h2>
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Created Code Templates</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loading ? (
               <p>Loading code templates...</p>
-            ) : codeTemplates.length > 0 ? (
-              codeTemplates.map((template) => (
-                <div key={template.id} className="bg-white shadow-md rounded-lg p-4">
+            ) : originalTemplates.length > 0 ? (
+              originalTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No code templates found.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Code Templates Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Forked Code Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading code templates...</p>
+            ) : forkedTemplates.length > 0 ? (
+              forkedTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
                   <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
                   <p className="text-sm text-gray-600 mt-2">{template.description}</p>
                   <p className="text-xs text-gray-500 mt-2">
