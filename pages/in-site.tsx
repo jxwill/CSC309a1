@@ -78,6 +78,15 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
+  const [searchBy, setSearchBy] = useState("title");
+  const [searchInput, setSearchInput] = useState("");
+
+  const handleSearch = () => {
+    console.log("Search By:", searchBy);
+    console.log("Search Input:", searchInput);
+
+    router.
+  };
 
   if (user && user.role === "Admin") {
     router.push("/manage");
@@ -139,20 +148,54 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   };
 
   const renderTabs = () => (
-    <div className="flex space-x-4 mb-8">
-      {[
-        { id: "templates", label: "Templates" },
-        { id: "blogposts", label: "Blog Posts" },
-      ].map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => setActiveTab(tab.id)}
-          className={`px-4 py-2 rounded-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
-            } hover:bg-blue-500 hover:text-white transition`}
+    <div className="flex justify-between items-center mb-8">
+      {/* Tabs on the left */}
+      <div className="flex space-x-4">
+        {[
+          { id: "templates", label: "Templates" },
+          { id: "blogposts", label: "Blog Posts" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
+              } hover:bg-blue-500 hover:text-white transition`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Search elements on the right */}
+      <div className="flex space-x-4">
+        {/* Dropdown to choose search criteria */}
+        <select
+          value={searchBy}
+          onChange={(e) => setSearchBy(e.target.value)} // Update state on change
+          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          {tab.label}
+          <option value="title">Search by Title</option>
+          <option value="description">Search by Description</option>
+          <option value="createdAt">Search by Date</option>
+        </select>
+
+        {/* Search input */}
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)} // Update state on change
+          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        {/* Search button */}
+        <button
+          onClick={handleSearch} // Trigger search logic
+          className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+        >
+          Search
         </button>
-      ))}
+      </div>
     </div>
   );
 

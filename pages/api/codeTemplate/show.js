@@ -36,6 +36,47 @@ export default async function handler(req, res) {
                     }
                 });
             } 
+            else if (options === "userName") {
+                // Split the "info" into potential first and last names
+                if (info.includes(" ")){
+                    const [first, last] = info.split(" ");
+                }
+                else{
+                    const [first] = info;
+                }
+              
+                template = await prisma.codeTemplate.findMany({
+                  where: {
+                    OR: [
+                      {
+                        author: {
+                          firstname: first,
+                          lastname: last || undefined, // Handle cases where only one name is provided
+                        },
+                      },
+                      {
+                        author: {
+                          firstname: info, // If searching by first name only
+                        },
+                      },
+                      {
+                        author: {
+                          lastname: info, // If searching by last name only
+                        },
+                      },
+                    ],
+                  },
+                  include: {
+                    author: {
+                      select: {
+                        id: true,
+                        firstname: true,
+                        lastname: true,
+                      },
+                    },
+                  },
+                });
+              }
             else if (options === "tags") {
                 template = await prisma.codeTemplate.findMany({
                     where: {
