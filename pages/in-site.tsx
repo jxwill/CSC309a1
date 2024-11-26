@@ -218,7 +218,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               key={post.id}
               className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
                 }`}
-              onClick={() => setSelectedBlogPost(post)}
             >
               {post.title}
             </button>
