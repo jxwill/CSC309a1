@@ -40,3 +40,5 @@ export const forkCodeTemplate = async (req, res) => {
     return res.status(500).json({ error: 'An error occurred while forking the code template.' });
   }
 };
+
+export default forkCodeTemplate;

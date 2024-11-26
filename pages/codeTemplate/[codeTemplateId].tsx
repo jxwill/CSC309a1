@@ -2,8 +2,64 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import cookie from "cookie";
+import { GetServerSideProps } from "next";
 
-const CodeTemplatePage = () => {
+interface UserProfile {
+    id: number;
+    firstname: string;
+    lastname: string;
+    email: string;
+}
+interface template {
+    token: string | null;
+    user: UserProfile;
+}
+
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+    const { req } = context;
+    const cookies = cookie.parse(req.headers.cookie || "");
+    const token = cookies.token || null;
+
+    if (!token) {
+        return {
+            redirect: {
+                destination: "/login",
+                permanent: false,
+            },
+        };
+    }
+
+    try {
+        // Fetch user basic information
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch user profile");
+        }
+
+        const user = await response.json();
+        console.log(1);
+        ;
+
+        return { props: { user, token } };
+    } catch (error) {
+        console.error("Error fetching profile data:", error);
+        return {
+            redirect: {
+                destination: "/login",
+                permanent: false,
+            },
+        };
+    }
+};
+
+const CodeTemplatePage = ({ user, token }: template) => {
     const [codeTemplate, setCodeTemplate] = useState(null);
     const [terminalOutput, setTerminalOutput] = useState('');
     const [loading, setLoading] = useState(true);
@@ -122,14 +178,22 @@ const CodeTemplatePage = () => {
             {/* Header Section */}
             <header
                 style={{
+                    display: 'flex',
+                    justifyContent: 'space-between', // Space between "Scriptorium" and title
+                    alignItems: 'center', // Vertically align items
                     backgroundColor: '#2196f3',
                     color: '#fff',
                     padding: '10px 20px',
                     marginBottom: '20px',
-                    textAlign: 'center',
                 }}
             >
-                <h1 style={{ margin: 0 }}>Code Template Manager</h1>
+                {/* Left side: Scriptorium */}
+                <div
+                    onClick={() => router.push("/in-site")}
+                    style={{ fontSize: '20px', fontWeight: 'bold' }}>Scriptorium</div>
+
+                {/* Center: Title */}
+                <h1 style={{ margin: 0, textAlign: 'center', flex: 1 }}>Code Template Manager</h1>
             </header>
 
             <div
@@ -291,14 +355,105 @@ const CodeTemplatePage = () => {
                                 Run
                             </button>
                             <button
-                                onClick={() => console.log('Fork logic here')}
+                                onClick={async () => {
+                                    try {
+                                        const response = await fetch(`/api/codeTemplate/fork`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                            },
+                                            body: JSON.stringify({
+                                                codeTemplateId: codeTemplate.id,
+                                                userId: user.id,
+                                            }),
+                                        });
+
+                                        // Log the response object
+                                        console.log('Response:', response);
+
+                                        // Check if response is okay
+                                        if (!response.ok) {
+                                            console.error('Response not ok:', response.status, response.statusText);
+                                            const errorData = await response.json();
+                                            alert(errorData.error || 'Forking failed with an unknown error.');
+                                            return;
+                                        }
+
+                                        // Parse JSON response and log data
+                                        const data = await response.json();
+                                        console.log('Data:', data); // Log parsed data
+
+                                        // Log forked template if it exists
+                                        if (data.forkedTemplate) {
+                                            console.log('Forked Template:', data.forkedTemplate);
+                                        } else {
+                                            console.warn('Forked Template missing from response.');
+                                        }
+
+                                        alert(data.message || 'Fork completed successfully.');
+                                        router.push(`/codeTemplate/${data.forkedTemplate.id}`);
+                                    } catch (error) {
+                                        console.error('Error during fork operation:', error);
+                                        alert('An error occurred while forking.');
+                                    }
+                                }}
                                 className="fork-button"
                             >
                                 Fork
                             </button>
                             <button
-                                onClick={() => console.log('Save logic here')}
-                                className='save-button'
+                                onClick={async () => {
+                                    try {
+                                        // Prepare the data to be sent
+                                        // const token = localStorage.getItem('token'); // Assuming the JWT is stored in localStorage
+                                        if (!token) {
+                                            alert('You must be logged in to save templates.');
+                                            return;
+                                        }
+
+                                        const saveData = {
+                                            title: codeTemplate.title,
+                                            description: codeTemplate.description,
+                                            tags: codeTemplate.tags,
+                                            code: codeTemplate.code,
+                                            language: codeTemplate.language,
+                                            authorId: user.id,
+                                        };
+
+                                        // Validate if all required fields are present
+                                        if (!saveData.title || !saveData.description || !saveData.tags || !saveData.code || !saveData.language || !saveData.authorId) {
+                                            alert('All fields are required to save the template.');
+                                            return;
+                                        }
+
+                                        // Make the POST request to save the template
+                                        const response = await fetch(`/api/codeTemplate/save`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                Authorization: `Bearer ${token}`, // Pass the token for authentication
+                                            },
+                                            body: JSON.stringify(saveData),
+                                        });
+
+                                        // Parse the response
+                                        const data = await response.json();
+
+                                        if (!response.ok) {
+                                            // Handle error responses
+                                            console.error('Error:', data.error || 'Saving failed with an unknown error.');
+                                            alert(data.error || 'Saving failed with an unknown error.');
+                                        } else {
+                                            // Successfully saved
+                                            console.log('Template saved successfully:', data);
+                                            alert('Template saved successfully!');
+                                        }
+                                    } catch (error) {
+                                        console.error('Error saving template:', error);
+                                        alert('An error occurred while saving the template.');
+                                    }
+                                }}
+                                className="save-button"
                             >
                                 Save
                             </button>
@@ -361,17 +516,31 @@ const CodeTemplatePage = () => {
                 </div>
             </div>
 
-            <footer
+            <div
                 style={{
-                    width: '100%',
-                    padding: '10px 0',
-                    backgroundColor: '#2196f3',
-                    color: '#fff',
-                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: '28vh',
                 }}
             >
-                <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
-            </footer>
+                {/* Main content */}
+                <main style={{ flex: 1, padding: '20px' }}>
+                    {/* Your main page content goes here */}
+                </main>
+
+                {/* Footer */}
+                <footer
+                    style={{
+                        width: '100%',
+                        padding: '10px 0',
+                        backgroundColor: '#2196f3',
+                        color: '#fff',
+                        textAlign: 'center',
+                    }}
+                >
+                    <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
+                </footer>
+            </div>
         </div>
     );
 };

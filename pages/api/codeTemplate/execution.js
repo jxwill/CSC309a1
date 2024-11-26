@@ -56,7 +56,7 @@ export default async function handler(req, res) {
                     executeCommand = `g++ temp${fileExtension} -o temp && ./temp`;
                     break;
                 default:
-                    return res.status(400).json({ error: "Unsupported language" });
+                    return res.status(408).json({ error: "Unsupported language" });
             }
 
             if (!tempFilePath) {
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
                         return res.status(408).json({ error: "Execution exceeded the time limit" });
                     }
                     console.error(`Execution error: ${stderr}`);
-                    return res.status(400).json({ error: `Execution error: ${stderr.trim()}` });
+                    return res.status(407).json({ error: `Execution error: unknown ${stderr.trim()}` });
                 }
 
                 // Return the output of the code execution

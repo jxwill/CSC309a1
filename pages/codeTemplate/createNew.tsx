@@ -9,56 +9,57 @@ interface UserProfile {
     firstname: string;
     lastname: string;
     email: string;
-  }
+}
 interface template {
     token: string | null;
-    user:  UserProfile;
-  }
+    user: UserProfile;
+}
 
 
-  export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
     const { req } = context;
     const cookies = cookie.parse(req.headers.cookie || "");
     const token = cookies.token || null;
-  
-    if (!token) {
-      return {
-        redirect: {
-          destination: "/login",
-          permanent: false,
-        },
-      };
-    }
-  
-    try {
-      // Fetch user basic information
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to fetch user profile");
-      }
-  
-      const user = await response.json();
-      console.log(1);
-  
-      return { props: { user, token } };
-    } catch (error) {
-      console.error("Error fetching profile data:", error);
-      return {
-        redirect: {
-          destination: "/login",
-          permanent: false,
-        },
-      };
-    }
-  };
 
-const EmptyCodeTemplatePage = ({user, token }: template) => {
-    console.log("line61",user,token);
+    if (!token) {
+        return {
+            redirect: {
+                destination: "/login",
+                permanent: false,
+            },
+        };
+    }
+
+    try {
+        // Fetch user basic information
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch user profile");
+        }
+
+        const user = await response.json();
+        console.log(1);
+        ;
+
+        return { props: { user, token } };
+    } catch (error) {
+        console.error("Error fetching profile data:", error);
+        return {
+            redirect: {
+                destination: "/login",
+                permanent: false,
+            },
+        };
+    }
+};
+
+const EmptyCodeTemplatePage = ({ user, token }: template) => {
+    console.log("line61", user, token);
 
     const [codeTemplate, setCodeTemplate] = useState({
         title: '',
@@ -66,7 +67,7 @@ const EmptyCodeTemplatePage = ({user, token }: template) => {
         tags: '',
         code: '',
         language: '',
-        authorId: 1, // Assuming a hardcoded author ID for now
+        authorId: user.id, // Assuming a hardcoded author ID for now
     });
 
     const editorRef = useRef(null);
@@ -115,7 +116,7 @@ const EmptyCodeTemplatePage = ({user, token }: template) => {
         try {
             const response = await fetch('/api/codeTemplate/save', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(codeTemplate),
             });
 

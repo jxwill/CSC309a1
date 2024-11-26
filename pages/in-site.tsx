@@ -176,10 +176,17 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       <main className="flex-1 p-6">
         <div className="flex justify-end mb-4 hidden md:block">
           <Link href="/codeTemplate/createNew">
-            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition mr-4">
               + Create New Template
             </button>
           </Link>
+
+          <button
+            onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+            className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+          >
+            View Template
+          </button>
         </div>
         {selectedTemplate ? (
           <div className="p-4 bg-white shadow rounded">
@@ -190,12 +197,9 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               value={selectedTemplate.code}
               readOnly
             />
-            <button
-              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              View Template
-            </button>
+            <p className="bottom-4 right-4 text-sm text-gray-500">
+              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()} {/* Display creation date */}
+            </p>
           </div>
         ) : (
           <p>Select a template from the sidebar.</p>
