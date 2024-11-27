@@ -29,7 +29,18 @@ interface BlogPost {
   codeTemplates: CodeTemplate[];
   createdAt: string;
   updatedAt: string;
+  comments: Comment[];
 }
+
+interface Comment {
+  id: number;
+  content: string;
+  author: string;
+  blogPostId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 interface InSiteProps {
   user: UserProfile | null;
@@ -78,8 +89,12 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const [searchBy, setSearchBy] = useState("title");
   const [searchInput, setSearchInput] = useState("");
+  const [newComment, setNewComment] = useState(""); // State for new comment input
+
 
   const handleSearch = async () => {
     console.log(`Searching for "${searchInput}" by "${searchBy}"`);
@@ -125,22 +140,69 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   }, []);
 
   useEffect(() => {
-    const fetchBlogPosts = async () => {
+    const fetchBlogPostsWithComments = async () => {
+      setLoadingPosts(true);
       try {
-        const response = await fetch("/api/blogpost/getAllBlogposts");
-        if (response.ok) {
+        const response = await fetch("/api/blogpost/getAllBlogposts", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`, // Use the provided token for secure access
+          },
+        });
+  
+        if (response.ok && response.headers.get("content-type")?.includes("application/json")) {
           const { data } = await response.json();
-          setBlogPosts(data);
+  
+          const postsWithComments = await Promise.all(
+            data.map(async (post: BlogPost) => {
+              try {
+                setLoadingComments(true);
+                const commentsResponse = await fetch(
+                  `/api/comments/getcomments?blogPostId=${post.id}`,
+                  {
+                    method: "GET",
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+  
+                if (
+                  commentsResponse.ok &&
+                  commentsResponse.headers.get("content-type")?.includes("application/json")
+                ) {
+                  const comments = await commentsResponse.json();
+                  return { ...post, comments };
+                } else {
+                  console.error(`Invalid response for comments on post ${post.id}`);
+                }
+              } catch (err) {
+                console.error(`Failed to fetch comments for post ${post.id}:`, err);
+              } finally {
+                setLoadingComments(false);
+              }
+              return { ...post, comments: [] };
+            })
+          );
+  
+          setBlogPosts(postsWithComments);
+        } else {
+          console.error("Invalid response for blog posts:", await response.text());
         }
       } catch (error) {
         console.error("Error fetching blog posts:", error);
+      } finally {
+        setLoadingPosts(false);
       }
     };
-
+  
     if (activeTab === "blogposts") {
-      fetchBlogPosts();
+      fetchBlogPostsWithComments();
     }
-  }, [activeTab]);
+  }, [activeTab, token]);
+  
+  
+  
 
   const handleLogout = async () => {
     await fetch("/api/users/logout", {
@@ -157,6 +219,93 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       router.push("/profile");
     }
   };
+
+  const handleReport = async (type: "blogPost" | "comment", id: number) => {
+    try {
+      // Prepare the API call for reporting
+      const response = await fetch("/api/report/report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Use the provided token for secure access
+        },
+        body: JSON.stringify({ type, id }), // Pass the type (blogPost or comment) and the ID to the server
+      });
+  
+      if (response.ok) {
+        alert(`${type === "blogPost" ? "Blog post" : "Comment"} reported successfully.`);
+      } else {
+        const { error } = await response.json();
+        alert(`Failed to report: ${error}`);
+      }
+    } catch (error) {
+      console.error(`Error reporting ${type}:`, error);
+      alert("An error occurred while reporting.");
+    }
+  };
+
+  const handleAddComment = async (blogPostId: number) => {
+    if (!newComment.trim()) {
+      alert("Please enter a comment.");
+      return;
+    }
+  
+    try {
+      // Make an API request to create a comment
+      const response = await fetch("/api/comments/createcomments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Use the provided token for secure access
+        },
+        body: JSON.stringify({
+          blogPostId,
+          content: newComment.trim(),
+        }),
+      });
+  
+      if (response.ok) {
+        const { comment } = await response.json(); // Get the created comment
+  
+        // Ensure comments array exists and update state
+        setBlogPosts((prevBlogPosts) =>
+          prevBlogPosts.map((post) =>
+            post.id === blogPostId
+              ? {
+                  ...post,
+                  comments: post.comments
+                    ? [...post.comments, comment]
+                    : [comment], // Handle case where comments are undefined
+                }
+              : post
+          )
+        );
+
+
+        if (selectedBlogPost?.id === blogPostId) {
+          setSelectedBlogPost({
+            ...selectedBlogPost,
+            comments: selectedBlogPost.comments
+              ? [...selectedBlogPost.comments, comment]
+              : [comment],
+          });
+        }
+  
+        setNewComment(""); // Clear the input field
+        alert("Comment added successfully!");
+      } else {
+        const { error } = await response.json();
+        console.error("Error adding comment:", error);
+        alert(`Failed to add comment: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      alert("An error occurred while adding the comment.");
+    }
+  };
+  
+  
+  
 
   const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
@@ -291,34 +440,31 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
   const renderBlogPosts = () => (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-1/4 bg-white p-4 shadow-md">
         <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
         <div className="space-y-2">
-          {blogPosts.map((post) => (
-            <div key={post.id} className="flex justify-between items-center">
-              <button
-                className={`w-full text-left p-2 rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+          {loadingPosts ? (
+            <p className="text-center text-gray-500">Loading blog posts...</p>
+          ) : blogPosts.length > 0 ? (
+            blogPosts.map((post) => (
+              <div key={post.id} className="flex justify-between items-center">
+                <button
+                  className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
+                    selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
                   }`}
-                onClick={() => setSelectedBlogPost(post)} // Set the selected blog post
-              >
-                {post.title}
-              </button>
-
-            </div>
-          ))}
+                  onClick={() => setSelectedBlogPost(post)}
+                >
+                  {post.title}
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No blog posts available.</p>
+          )}
         </div>
       </aside>
-
-      {/* Main Content */}
+  
       <main className="flex-1 p-6">
-        <div className="flex justify-end mb-4 hidden md:block">
-          <Link href="/Createblogposts">
-            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-              + Create Blog Post
-            </button>
-          </Link>
-        </div>
         {selectedBlogPost ? (
           <div className="p-4 bg-white shadow rounded">
             <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
@@ -335,6 +481,63 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
                 Updated: {new Date(selectedBlogPost.updatedAt).toLocaleString()}
               </span>
             </div>
+  
+            <div className="mt-4">
+              <button
+                onClick={() => handleReport("blogPost", selectedBlogPost.id)}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+              >
+                Report Blog Post
+              </button>
+            </div>
+  
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold mb-4">Comments</h4>
+              {loadingComments ? (
+                <p className="text-center text-gray-500">Loading comments...</p>
+              ) : selectedBlogPost?.comments?.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedBlogPost.comments
+                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                    .map((comment) => (
+                      <div key={comment.id} className="p-4 bg-gray-100 rounded shadow-md">
+                        <p className="text-gray-800">{comment.content}</p>
+                        <div className="flex justify-between mt-2 text-sm text-gray-500">
+                          <span>By: {comment.author || "Anonymous"}</span>
+                          <button
+                            onClick={() => handleReport("comment", comment.id)}
+                            className="text-red-500 hover:underline"
+                          >
+                            Report
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500">No comments available.</p>
+              )}
+  
+              <div className="mt-4">
+                <textarea
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="w-full p-2 border rounded-lg"
+                />
+                <button
+                  onClick={() => handleAddComment(selectedBlogPost.id)}
+                  className={`mt-2 px-4 py-2 rounded-lg transition ${
+                    newComment.trim()
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  disabled={!newComment.trim()}
+                >
+                  Submit Comment
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <p>Select a blog post from the sidebar.</p>
@@ -342,6 +545,9 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       </main>
     </div>
   );
+  
+  
+  
 
 
   return (
