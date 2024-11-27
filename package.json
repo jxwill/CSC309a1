@@ -10,12 +10,7 @@
     "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie formidable framer-motion"
   },
   "dependencies": {
-    "@codemirror/lang-cpp": "^6.0.2",
-    "@codemirror/lang-css": "^6.3.1",
-    "@codemirror/lang-java": "^6.0.1",
     "@codemirror/lang-javascript": "github:codemirror/lang-javascript",
-    "@codemirror/lang-python": "^6.1.6",
-    "@codemirror/lint": "^6.8.3",
     "@prisma/client": "^5.22.0",
     "@react-three/fiber": "^8.17.10",
     "axios": "^1.7.8",
