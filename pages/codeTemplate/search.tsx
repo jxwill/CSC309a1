@@ -67,7 +67,7 @@ const SearchPage = () => {
                     className="h-16 px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="title">Search by Title</option>
-                    <option value="description">Search by Description</option>
+                    {/* <option value="description">Search by Description</option> */}
                     <option value="author">Search by Author</option>
                     <option value="tags">Search by Tag</option>
                 </select>

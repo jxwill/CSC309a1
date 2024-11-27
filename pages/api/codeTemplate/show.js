@@ -136,31 +136,18 @@ export default async function handler(req, res) {
                 });
               }
               else if (options === "tags") {
-                // Clean the input: remove spaces and commas, split into tags
-                const inputTags = info
-                    .split(',')
-                    .map(tag => tag.trim()) // Remove leading/trailing spaces
-                    .filter(tag => tag !== ''); // Remove empty tags
-            
-                // Query templates that have any of the input tags
+                console.log(info);
+                console.log('HHHHEHEHEHEHEHHEEHHEHE')
                 template = await prisma.codeTemplate.findMany({
-                    where: {
-                        tags: {
-                            hasSome: inputTags, // Match templates with at least one tag in the input list
-                        },
-                        isForked: false, // Exclude forked templates
+                  where: {
+                    tags: {
+                      contains: info,
                     },
-                    include: {
-                        author: {
-                            select: {
-                                id: true,
-                                firstname: true,
-                                lastname: true,
-                            },
-                        },
-                    },
+                  },
                 });
-            } else {
+                
+              }
+              else {
                 return res.status(400).json({ error: 'Invalid option parameter' });
             }
             
