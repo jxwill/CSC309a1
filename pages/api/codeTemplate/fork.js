@@ -23,7 +23,7 @@ export const forkCodeTemplate = async (req, res) => {
     // Create a new forked code template
     const forkedTemplate = await prisma.codeTemplate.create({
       data: {
-        title: `${originalTemplate.title} (Forked)`,
+        title: originalTemplate.title,
         description: originalTemplate.description,
         tags: originalTemplate.tags,
         code: originalTemplate.code,

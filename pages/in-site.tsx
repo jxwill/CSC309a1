@@ -88,30 +88,14 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       alert("Please enter a search query.");
       return;
     }
-
-    // Construct API URL
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/codeTemplate/show`;
-
     try {
-      // Make the API request
-      const response = await fetch(`${apiUrl}?options=${searchBy}&info=${searchInput.trim()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
+      router.push({
+        pathname: "/codeTemplate/search",
+        query: {
+          options: searchBy,
+          info: searchInput,
         },
-      });
-
-      // Check if the response is successful
-      if (!response.ok) {
-        throw new Error("Failed to fetch results");
-      }
-
-      // Parse the JSON response
-      const data = await response.json();
-      console.log("API Response:", data); // Log the API response for debugging
-
-      // Update the templates or results state
-      setTemplates(data.templates || []); // Assuming API returns `templates`
+      })
     } catch (error) {
       console.error("Error fetching search results:", error);
       setTemplates([]); // Clear results in case of an error
@@ -196,37 +180,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           </button>
         ))}
       </div>
-
-      {/* Search elements on the right */}
-      <div className="flex space-x-4">
-        {/* Dropdown to choose search criteria */}
-        <select
-          value={searchBy}
-          onChange={(e) => setSearchBy(e.target.value)} // Update state on change
-          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="title">Search by Title</option>
-          <option value="description">Search by Description</option>
-          <option value="createdAt">Search by Date</option>
-        </select>
-
-        {/* Search input */}
-        <input
-          type="text"
-          placeholder="Search templates..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)} // Update state on change
-          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
-        {/* Search button */}
-        <button
-          onClick={handleSearch} // Trigger search logic
-          className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-        >
-          Search
-        </button>
-      </div>
     </div>
   );
 
@@ -248,20 +201,55 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         </div>
       </aside>
       <main className="flex-1 p-6">
-        <div className="flex justify-end mb-4 hidden md:block">
-          <Link href="/codeTemplate/createNew">
-            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition mr-4">
-              + Create New Template
+        <div className="flex justify-between items-center mb-4 hidden md:flex">
+          {/* Left Section: Buttons */}
+          <div className="flex space-x-4">
+            <Link href="/codeTemplate/createNew">
+              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                + Create New Template
+              </button>
+            </Link>
+            <button
+              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+            >
+              View Template
             </button>
-          </Link>
+          </div>
 
-          <button
-            onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-            className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-          >
-            View Template
-          </button>
+          {/* Right Section: Search */}
+          <div className="flex space-x-4">
+            {/* Dropdown to choose search criteria */}
+            <select
+              value={searchBy}
+              onChange={(e) => setSearchBy(e.target.value)} // Update state on change
+              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="title">Search by Title</option>
+              <option value="description">Search by Description</option>
+              <option value="author">Search by Author</option>
+              <option value="tags">Search by Tag</option>
+            </select>
+
+            {/* Search input */}
+            <input
+              type="text"
+              placeholder="Search templates..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)} // Update state on change
+              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            {/* Search button */}
+            <button
+              onClick={handleSearch} // Trigger search logic
+              className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+            >
+              Search
+            </button>
+          </div>
         </div>
+
         {selectedTemplate ? (
           <div className="p-4 bg-white shadow rounded">
             <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>

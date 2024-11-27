@@ -26,7 +26,65 @@ export default async function handler(req, res) {
                 template = await prisma.codeTemplate.findMany({
                     where: {
                         id: parseInt(info)
+                    },
+                    include: {
+                        author: {
+                          select: {
+                            id: true,
+                            firstname: true,
+                            lastname: true,
+                          },
+                        },
                     }
+                });
+            }
+            else if (options === "author") {
+                let first, last;
+            
+                // Split the info into first and last names
+                if (info.includes(" ")) {
+                    [first, last] = info.split(" ");
+                } else {
+                    // If no space, assume the entire input is either first or last name
+                    first = info;
+                    last = undefined;
+                }
+            
+                // Query the database for templates based on the author's name
+                template = await prisma.codeTemplate.findMany({
+                    where: {
+                        isForked: false,
+                        OR: [
+                            // Match both first and last names
+                            {
+                                author: {
+                                    firstname: first,
+                                    lastname: last || undefined, // Handle cases where only one name is provided
+                                },
+                            },
+                            // Match first name only
+                            {
+                                author: {
+                                    firstname: info,
+                                },
+                            },
+                            // Match last name only
+                            {
+                                author: {
+                                    lastname: info,
+                                },
+                            },
+                        ],
+                    },
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                firstname: true,
+                                lastname: true,
+                            },
+                        },
+                    },
                 });
             }
             else if (options === "title") {
@@ -77,13 +135,30 @@ export default async function handler(req, res) {
                   },
                 });
               }
-            else if (options === "tags") {
+              else if (options === "tags") {
+                // Clean the input: remove spaces and commas, split into tags
+                const inputTags = info
+                    .split(',')
+                    .map(tag => tag.trim()) // Remove leading/trailing spaces
+                    .filter(tag => tag !== ''); // Remove empty tags
+            
+                // Query templates that have any of the input tags
                 template = await prisma.codeTemplate.findMany({
                     where: {
                         tags: {
-                            has: info
-                        }
-                    }
+                            hasSome: inputTags, // Match templates with at least one tag in the input list
+                        },
+                        isForked: false, // Exclude forked templates
+                    },
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                firstname: true,
+                                lastname: true,
+                            },
+                        },
+                    },
                 });
             } else {
                 return res.status(400).json({ error: 'Invalid option parameter' });
