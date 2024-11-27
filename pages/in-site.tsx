@@ -290,40 +290,65 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   );
 
   const renderBlogPosts = () => (
-    <div className="flex min-h-screen">
-      <aside className="w-1/4 bg-white p-4 shadow-md">
-        <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
-        <div className="space-y-2">
-          {blogPosts.map((post) => (
-            <button
-              key={post.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                }`}
-            >
-              {post.title}
-            </button>
-          ))}
-        </div>
-      </aside>
-      <main className="flex-1 p-6">
-        <div className="flex justify-end mb-4 hidden md:block">
-          <Link href="/Createblogposts">
-            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-              + Create Blog Post
-            </button>
-          </Link>
-        </div>
-        {selectedBlogPost ? (
-          <div className="p-4 bg-white shadow rounded">
-            <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-1/4 bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
+          <div className="space-y-2">
+            {blogPosts.map((post) => (
+                <div key={post.id} className="flex justify-between items-center">
+                  <button
+                      className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
+                          selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                      }`}
+                      onClick={() => setSelectedBlogPost(post)} // Set the selected blog post
+                  >
+                    {post.title}
+                  </button>
+                  <button
+                      className="text-red-500 hover:text-red-700 transition ml-2"
+                      onClick={() => handleDelete(post.id)} // Trigger delete action
+                  >
+                    Delete
+                  </button>
+                </div>
+            ))}
           </div>
-        ) : (
-          <p>Select a blog post from the sidebar.</p>
-        )}
-      </main>
-    </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          <div className="flex justify-end mb-4 hidden md:block">
+            <Link href="/Createblogposts">
+              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                + Create Blog Post
+              </button>
+            </Link>
+          </div>
+          {selectedBlogPost ? (
+              <div className="p-4 bg-white shadow rounded">
+                <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
+                <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
+                <div className="prose">
+                  <p>{selectedBlogPost.content}</p>
+                </div>
+                <div className="mt-4">
+            <span className="text-xs text-gray-500">
+              Published: {new Date(selectedBlogPost.createdAt).toLocaleString()}
+            </span>
+                  <br />
+                  <span className="text-xs text-gray-500">
+              Updated: {new Date(selectedBlogPost.updatedAt).toLocaleString()}
+            </span>
+                </div>
+              </div>
+          ) : (
+              <p>Select a blog post from the sidebar.</p>
+          )}
+        </main>
+      </div>
   );
+
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 to-blue-300">
