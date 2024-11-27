@@ -304,12 +304,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               >
                 {post.title}
               </button>
-              <button
-                className="text-red-500 hover:text-red-700 transition ml-2"
-                onClick={() => handleDelete(post.id)} // Trigger delete action
-              >
-                Delete
-              </button>
+
             </div>
           ))}
         </div>
