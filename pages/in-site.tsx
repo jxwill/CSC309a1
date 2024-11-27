@@ -329,12 +329,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           <div className="p-4 bg-white shadow rounded">
             <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
             <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
-            <button
-              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              View Blog
-            </button>
           </div>
         ) : (
           <p>Select a blog post from the sidebar.</p>
