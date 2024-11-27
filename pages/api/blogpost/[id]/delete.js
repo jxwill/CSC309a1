@@ -1,5 +1,5 @@
 import prisma from "utils/db";
-import { verifyToken } from "utils/middleware";
+import { verifyToken } from "utils/auth";
 
 export default async function handler(req, res) {
     if (req.method !== 'DELETE') {

@@ -25,6 +25,12 @@ export default async function handler(req, res) {
                     comments: {
                         select: { id: true }, // Include comment count
                     },
+                    ratings: {
+                        select: {
+                            value: true, // 1 (upvote) or -1 (downvote)
+                            userId: true, // Include userId for individual ratings
+                        },
+                    },
                 },
             });
 

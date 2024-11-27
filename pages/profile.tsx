@@ -121,6 +121,29 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
     fetchUserContent();
   }, [user?.id, token]);
 
+  const handleDelete = async (postId: number) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this blog post?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/blogpost/${postId}/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, // Ensure the token is passed
+        },
+      });
+
+      if (response.ok) {
+        setBlogPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId)); // Remove the deleted post
+      } else {
+        console.error("Failed to delete blog post.");
+      }
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+    }
+  };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
@@ -143,22 +166,47 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
           <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Blog Posts</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {loading ? (
-              <p>Loading blog posts...</p>
+                <p>Loading blog posts...</p>
             ) : blogPosts.length > 0 ? (
-              blogPosts.map((post) => (
-                <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
-                  <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
-                  <p className="text-sm text-gray-600 mt-2">{post.description}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Created: {new Date(post.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
+                blogPosts.map((post) => (
+                    <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
+                      <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
+                      <p className="text-sm text-gray-600 mt-2">{post.description}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Created: {new Date(post.createdAt).toLocaleDateString()}
+                      </p>
+
+                      {/* Button Section */}
+                      <div className="flex space-x-2 mt-4">
+                        {/* Edit Button */}
+                        <button
+                            onClick={() =>
+                                router.push({
+                                  pathname: `/editBlogposts/${post.id}`,
+                                  query: {token},
+                                })
+                            }
+                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-600 transition"
+                        >
+                          Edit
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                            onClick={() => handleDelete(post.id)} // Call the delete handler
+                            className="w-full bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                ))
             ) : (
-              <p className="text-gray-500">No blog posts found.</p>
+                <p className="text-gray-500">No blog posts found.</p>
             )}
           </div>
         </div>
+
 
         {/* Code Templates Section */}
         <div className="mt-8">
