@@ -103,15 +103,15 @@ const CodeTemplatePage = ({ user, token }: template) => {
     useEffect(() => {
         if (!editorContainer.current || !codeTemplate) return;
 
-        // Prevent re-initialization of CodeMirror
         if (editorRef.current) {
+            // Update the editor content dynamically
             editorRef.current.dispatch({
                 changes: { from: 0, to: editorRef.current.state.doc.length, insert: codeTemplate.code },
             });
             return;
         }
 
-        // Initialize a new CodeMirror instance
+        // Initialize the editor only once
         const editor = new EditorView({
             doc: codeTemplate.code || '',
             extensions: [
@@ -127,10 +127,10 @@ const CodeTemplatePage = ({ user, token }: template) => {
             parent: editorContainer.current,
         });
 
-        editorRef.current = editor; // Save the instance to the ref
+        editorRef.current = editor;
 
         return () => {
-            editor.destroy(); // Clean up on unmount
+            editor.destroy();
             editorRef.current = null;
         };
     }, [codeTemplate]);
@@ -224,8 +224,25 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                 color: '#333',
                             }}
                         >
-                            {codeTemplate.title}
+                            {codeTemplate.title}{' '}
+                            <span
+                                style={{
+                                    fontSize: '1rem', // Smaller font size
+                                    fontWeight: '300', // Lighter font weight
+                                    color: '#555', // Slightly lighter color
+                                }}
+                            >
+                                by {codeTemplate.author.firstname} {codeTemplate.author.lastname}
+                            </span>
                         </h2>
+                        <p
+                            style={{
+                                fontSize: '1rem',
+                                // fontStyle: 'italic',
+                                color: '#666',
+                                marginBottom: '15px',
+                            }}
+                        >{codeTemplate.tags}</p>
                         <p
                             style={{
                                 fontSize: '1rem',
@@ -427,8 +444,8 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                         }
 
                                         // Make the POST request to save the template
-                                        const response = await fetch(`/api/codeTemplate/save`, {
-                                            method: 'POST',
+                                        const response = await fetch(`/api/codeTemplate/update?id=${codeTemplate.id}`, {
+                                            method: 'PATCH',
                                             headers: {
                                                 'Content-Type': 'application/json',
                                                 Authorization: `Bearer ${token}`, // Pass the token for authentication

@@ -88,30 +88,14 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       alert("Please enter a search query.");
       return;
     }
-
-    // Construct API URL
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/codeTemplate/show`;
-
     try {
-      // Make the API request
-      const response = await fetch(`${apiUrl}?options=${searchBy}&info=${searchInput.trim()}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
+      router.push({
+        pathname: "/codeTemplate/search",
+        query: {
+          options: searchBy,
+          info: searchInput,
         },
-      });
-
-      // Check if the response is successful
-      if (!response.ok) {
-        throw new Error("Failed to fetch results");
-      }
-
-      // Parse the JSON response
-      const data = await response.json();
-      console.log("API Response:", data); // Log the API response for debugging
-
-      // Update the templates or results state
-      setTemplates(data.templates || []); // Assuming API returns `templates`
+      })
     } catch (error) {
       console.error("Error fetching search results:", error);
       setTemplates([]); // Clear results in case of an error
@@ -207,7 +191,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         >
           <option value="title">Search by Title</option>
           <option value="description">Search by Description</option>
-          <option value="createdAt">Search by Date</option>
+          <option value="author">Search by Author</option>
+          <option value="tags">Search by Tag</option>
         </select>
 
         {/* Search input */}
