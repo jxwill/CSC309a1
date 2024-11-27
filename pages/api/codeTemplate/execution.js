@@ -83,11 +83,8 @@ export default async function handler(req, res) {
                         return res.status(408).json({ error: "Execution exceeded the time limit" });
                     }
                     console.error(`Execution error: ${stderr}`);
-<<<<<<< HEAD
-                    return res.status(407).json({ error: `Execution error: ${stderr.trim()}` });
-=======
                     return res.status(407).json({ error: `Execution exceeded the time limit ${stderr.trim()}` });
->>>>>>> 365be301bf420f5835afe381fbdbf5d33f86a2aa
+
                 }
 
                 // Return the output of the code execution
