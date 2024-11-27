@@ -1,18 +1,32 @@
-import { useState, useEffect } from "react";
-import cookie from "cookie";
+import React, { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
-import { useRouter } from "next/router";
+import cookie from "cookie";
+import { useRouter } from 'next/router';
 
 interface UserProfile {
+  id: number;
   firstname: string;
   lastname: string;
   email: string;
-  avatar: string;
+}
+
+interface BlogPost {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
+interface CodeTemplate {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: string;
 }
 
 interface ProfileProps {
-  user: UserProfile | null;
-  token: string | null;
+  user: UserProfile;
+  token: string;
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
@@ -20,136 +34,184 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const cookies = cookie.parse(req.headers.cookie || "");
   const token = cookies.token || null;
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
 
   try {
-    const response = await fetch(`${baseUrl}/api/users/profile`, {
-      method: "GET",
+    // Fetch user basic information
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
       headers: {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
+        Authorization: `Bearer ${token}`,
       },
     });
 
-    if (response.status === 401) {
-      // Redirect to homepage with a query parameter to show the popup
-      return {
-        redirect: {
-          destination: "/?showPopup=true",
-          permanent: false,
-        },
-      };
+    if (!response.ok) {
+      throw new Error("Failed to fetch user profile");
     }
 
     const user = await response.json();
+    console.log(1);
+
     return { props: { user, token } };
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return { props: { user: null, token: null } };
+    console.error("Error fetching profile data:", error);
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
   }
 };
-
-export default function ProfilePage({ user, token }: ProfileProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<UserProfile>(
-    user || { firstname: "Visitor", lastname: "", email: "guest@example.com", avatar: "" }
-  );
-  const [message, setMessage] = useState<string>("");
+console.log(2);
+const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [codeTemplates, setCodeTemplates] = useState<CodeTemplate[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
+  const [forkedTemplates, setForkedTemplates] = useState<CodeTemplate[]>([]);
+  const [originalTemplates, setOriginalTemplates] = useState<CodeTemplate[]>([]);
+  console.log(user, token);
+
   useEffect(() => {
-    if (router.query.showPopup) {
-      alert("You need to register to see the profile page!");
-    }
-  }, [router.query]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!token) {
-      alert("You need to be logged in to update your profile.");
+    console.log(4);
+    if (!user?.id || !token) {
+      console.warn("Missing user ID or token. Skipping fetch.");
       return;
     }
+    console.log(5);
 
-    try {
-      const response = await fetch("/api/users/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+    console.log("Fetching user content for ID:", user.id); // Log user ID
 
-      if (response.ok) {
-        alert("Profile updated successfully!");
-        setIsEditing(false);
-      } else {
-        alert("Failed to update profile.");
+    const fetchUserContent = async () => {
+      console.log(6);
+      setLoading(true);
+      try {
+        console.log(7);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/users/getbyid?userId=${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+          }
+        );
+
+        const data = await response.json();
+        setBlogPosts(data.blogPosts || []);
+        setCodeTemplates(data.codeTemplates || []);
+        const allTemplates = data.codeTemplates || [];
+
+        setForkedTemplates(allTemplates.filter((template) => template.isForked));
+        setOriginalTemplates(allTemplates.filter((template) => !template.isForked));
+      } catch (error) {
+        console.error("Error fetching user content:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      alert("An error occurred.");
-    }
-  };
+    };
+
+    fetchUserContent();
+  }, [user?.id, token]);
+
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gradient-to-br from-purple-100 to-purple-300">
-      <h1 className="text-3xl font-bold mb-6">User Profile</h1>
-
-      {formData.avatar ? (
-        <img
-          src={formData.avatar}
-          alt="Avatar"
-          className="w-24 h-24 rounded-full mb-4"
-        />
-      ) : (
-        <div className="w-24 h-24 rounded-full mb-4 bg-gray-300 flex items-center justify-center">
-          No Avatar
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
+      <div className="container mx-auto p-6">
+        {/* Profile Header */}
+        <div className="bg-white shadow-lg rounded-lg p-6 flex items-center space-x-6">
+          <div className="w-20 h-20 rounded-full bg-purple-300 flex items-center justify-center text-white text-3xl font-bold">
+            {user.firstname[0]}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-700">
+              {user.firstname} {user.lastname}
+            </h1>
+            <p className="text-gray-500">{user.email}</p>
+          </div>
         </div>
-      )}
 
-      {!isEditing ? (
-        <>
-          <p>First Name: {formData.firstname}</p>
-          <p>Last Name: {formData.lastname}</p>
-          <p>Email: {formData.email}</p>
-          {token && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg mt-4"
-            >
-              Edit Profile
-            </button>
-          )}
-        </>
-      ) : (
-        <form onSubmit={handleSubmit} className="w-80 space-y-4">
-          <input
-            name="firstname"
-            value={formData.firstname}
-            onChange={handleChange}
-            className="w-full p-3 border rounded"
-          />
-          <input
-            name="lastname"
-            value={formData.lastname}
-            onChange={handleChange}
-            className="w-full p-3 border rounded"
-          />
-          <button type="submit" className="w-full p-3 bg-green-600 text-white rounded-lg">
-            Update Profile
-          </button>
-          <button onClick={() => setIsEditing(false)} className="w-full p-3 bg-red-600 text-white rounded-lg mt-2">
-            Cancel
-          </button>
-        </form>
-      )}
+        {/* Blog Posts Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Blog Posts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading blog posts...</p>
+            ) : blogPosts.length > 0 ? (
+              blogPosts.map((post) => (
+                <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
+                  <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{post.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(post.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No blog posts found.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Code Templates Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Created Code Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading code templates...</p>
+            ) : originalTemplates.length > 0 ? (
+              originalTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No code templates found.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Code Templates Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Forked Code Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading code templates...</p>
+            ) : forkedTemplates.length > 0 ? (
+              forkedTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No code templates found.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default ProfilePage;
+
+
 
 

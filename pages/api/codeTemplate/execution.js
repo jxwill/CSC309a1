@@ -56,7 +56,7 @@ export default async function handler(req, res) {
                     executeCommand = `g++ temp${fileExtension} -o temp && ./temp`;
                     break;
                 default:
-                    return res.status(400).json({ error: "Unsupported language" });
+                    return res.status(408).json({ error: "Unsupported language" });
             }
 
             if (!tempFilePath) {
@@ -64,8 +64,8 @@ export default async function handler(req, res) {
                 fs.writeFileSync(tempFilePath, code);
             }
 
-            // Execute the code using child_process
-            exec(executeCommand, (error, stdout, stderr) => {
+            // Execute the code with a 5-second timeout
+            const childProcess = exec(executeCommand, { timeout: 5000 }, (error, stdout, stderr) => {
                 // Clean up the temporary file(s)
                 try {
                     if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
@@ -79,12 +79,21 @@ export default async function handler(req, res) {
                 }
 
                 if (error) {
+                    if (error.killed) {
+                        return res.status(408).json({ error: "Execution exceeded the time limit" });
+                    }
                     console.error(`Execution error: ${stderr}`);
-                    return res.status(400).json({ error: `Execution error: ${stderr.trim()}` });
+                    return res.status(407).json({ error: `Execution error: unknown ${stderr.trim()}` });
                 }
 
                 // Return the output of the code execution
                 return res.status(200).json({ output: stdout.trim() });
+            });
+
+            // Handle process timeout explicitly
+            childProcess.on("error", (error) => {
+                console.error("Process error:", error);
+                return res.status(500).json({ error: "Internal server error" });
             });
         } else {
             // Return 405 if method is not allowed

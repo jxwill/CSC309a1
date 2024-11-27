@@ -4,7 +4,7 @@ import prisma from "@/utils/db";
 export default async function handler(req, res) {
   async function next() {
     try {
-      console.log("in line 7 -------", req.body);
+      //console.log("in line 7 -------", req.body);
       const { email, role, banned} = req.body;
 
       // Handle PUT request: Update user role or ban/unban user

@@ -10,7 +10,7 @@ export default async function adminProtected(req, res, next) {
 
   try {
     const decodedToken = verifyToken(token);
-    console.log(decodedToken.role);
+    //console.log(decodedToken.role);
     if (decodedToken.role !== 'Admin') {
       return res.status(403).json({ error: 'Access denied: Admins only' });
     }

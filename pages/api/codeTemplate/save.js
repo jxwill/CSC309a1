@@ -5,18 +5,17 @@ export default async function handler(req, res) {
     try {
         const authHeader = req.headers.authorization;
 
-        // if (!authHeader) {
-        //     return res.status(401).json({ error: 'Unauthorized: No token provided' });
-        // }
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Only logined in users can save templates' });
+        }
 
-        // const token = authHeader.split(' ')[1]; // Extract the token from "Bearer <token>"
+        const token = authHeader.split(' ')[1];
 
-        // // Decode the token and check the expiration
-        // const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // Use process.env.JWT_SECRET consistently
-        // console.log(decodedToken);
-        // const userId = decodedToken.id; // Assuming "id" field is stored in the token payload
+        // Decode the token and check the expiration
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET); 
+        console.log(decodedToken);
+        const userId = decodedToken.id; 
 
-        const userId = 1; // Replace with the actual user ID
         if (req.method === 'POST') {
             const { title, description, tags, code, language, authorId } = req.body;
 

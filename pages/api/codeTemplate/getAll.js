@@ -6,6 +6,9 @@ export default async function handler(req, res) {
     try {
       // Fetch all code templates from the Prisma database
       const codeTemplates = await prisma.codeTemplate.findMany({
+        where: {
+          isForked: false,
+        },
         orderBy: {
           createdAt: "desc", // Sort by createdAt in descending order
         },

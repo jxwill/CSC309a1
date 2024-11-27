@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "3000:3000"  # Map port 3000 of the container to port 3000 of the host
+    volumes:
+      - ./prisma:/app/prisma  # Mount the prisma folder for SQLite database and schema
+    env_file:
+      - ./.env  # Load additional environment variables from .env
+    command: npm run dev  # Start the application in development mode

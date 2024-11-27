@@ -9,7 +9,7 @@ interface UserProfile {
   lastname: string;
   email: string;
   avatar?: string;
-  role:string
+  role: string;
 }
 
 interface CodeTemplate {
@@ -30,7 +30,6 @@ interface BlogPost {
   createdAt: string;
   updatedAt: string;
 }
-
 
 interface InSiteProps {
   user: UserProfile | null;
@@ -77,15 +76,52 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
-
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  console.log(user)
-  if(user && user.role ==="Admin"){
+  const [searchBy, setSearchBy] = useState("title");
+  const [searchInput, setSearchInput] = useState("");
+
+  const handleSearch = async () => {
+    console.log(`Searching for "${searchInput}" by "${searchBy}"`);
+
+    if (!searchInput.trim()) {
+      alert("Please enter a search query.");
+      return;
+    }
+
+    // Construct API URL
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/codeTemplate/show`;
+
+    try {
+      // Make the API request
+      const response = await fetch(`${apiUrl}?options=${searchBy}&info=${searchInput.trim()}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Check if the response is successful
+      if (!response.ok) {
+        throw new Error("Failed to fetch results");
+      }
+
+      // Parse the JSON response
+      const data = await response.json();
+      console.log("API Response:", data); // Log the API response for debugging
+
+      // Update the templates or results state
+      setTemplates(data.templates || []); // Assuming API returns `templates`
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+      setTemplates([]); // Clear results in case of an error
+    }
+  };
+
+  if (user && user.role === "Admin") {
     router.push("/manage");
   }
 
-  // Fetch templates
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
@@ -94,8 +130,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           const data = await response.json();
           setTemplates(data);
           setSelectedTemplate(data[0] || null);
-        } else {
-          console.error("Failed to fetch templates");
+
         }
       } catch (error) {
         console.error("Error fetching templates:", error);
@@ -106,48 +141,22 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   }, []);
 
   useEffect(() => {
-    const fetchInitialBlogPosts = async () => {
+    const fetchBlogPosts = async () => {
       try {
         const response = await fetch("/api/blogpost/getAllBlogposts");
         if (response.ok) {
           const { data } = await response.json();
           setBlogPosts(data);
-        } else {
-          console.error("Failed to fetch blog posts:", await response.text());
         }
       } catch (error) {
         console.error("Error fetching blog posts:", error);
       }
     };
 
-    fetchInitialBlogPosts(); // Fetch blog posts on initial page load
-  }, []);
-
-
-  useEffect(() => {
-    // Automatically switch tab based on URL query parameter
-    const activeTabFromQuery = router.query.activeTab || "templates";
-    setActiveTab(activeTabFromQuery as string);
-
-    if (activeTabFromQuery === "blogposts") {
-      const fetchBlogPosts = async () => {
-        try {
-          const response = await fetch("/api/blogpost/getAllBlogposts");
-          if (response.ok) {
-            const { data } = await response.json();
-            setBlogPosts(data);
-          } else {
-            console.error("Failed to fetch blog posts");
-          }
-        } catch (error) {
-          console.error("Error fetching blog posts:", error);
-        }
-      };
-
+    if (activeTab === "blogposts") {
       fetchBlogPosts();
     }
-  }, [router.query.activeTab]);
-
+  }, [activeTab]);
 
   const handleLogout = async () => {
     await fetch("/api/users/logout", {
@@ -169,33 +178,60 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     setMenuOpen((prev) => !prev);
   };
 
-  // Render Tabs
   const renderTabs = () => (
-      <div className="flex space-x-4 mb-8">
+    <div className="flex justify-between items-center mb-8">
+      {/* Tabs on the left */}
+      <div className="flex space-x-4">
         {[
           { id: "templates", label: "Templates" },
-          { id: "profile", label: "Profile" },
           { id: "blogposts", label: "Blog Posts" },
         ].map((tab) => (
-            <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg ${
-                    activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
-                } hover:bg-blue-500 hover:text-white transition`}
-            >
-              {tab.label}
-            </button>
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2 rounded-lg ${activeTab === tab.id ? "bg-blue-600 text-white" : "bg-gray-200"
+              } hover:bg-blue-500 hover:text-white transition`}
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
+
+      {/* Search elements on the right */}
+      <div className="flex space-x-4">
+        {/* Dropdown to choose search criteria */}
+        <select
+          value={searchBy}
+          onChange={(e) => setSearchBy(e.target.value)} // Update state on change
+          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="title">Search by Title</option>
+          <option value="description">Search by Description</option>
+          <option value="createdAt">Search by Date</option>
+        </select>
+
+        {/* Search input */}
+        <input
+          type="text"
+          placeholder="Search templates..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)} // Update state on change
+          className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        {/* Search button */}
+        <button
+          onClick={handleSearch} // Trigger search logic
+          className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+        >
+          Search
+        </button>
+      </div>
+    </div>
   );
 
-
-
-  // Render Code Templates with Sidebar
   const renderTemplates = () => (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <aside className="w-1/4 bg-white p-4 shadow-md">
         <h2 className="text-lg font-bold mb-4">Templates</h2>
         <div className="space-y-2">
@@ -211,129 +247,124 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           ))}
         </div>
       </aside>
-
-      {/* Main Content */}
       <main className="flex-1 p-6">
-        {selectedTemplate ? (
-          <Link href={`/codeTemplate/${selectedTemplate.id}`} passHref>
-            <div className="p-4 bg-white shadow rounded cursor-pointer hover:bg-gray-100 transition">
-              <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
-              <textarea
-                className="w-full h-40 border rounded p-2"
-                value={selectedTemplate.code}
-                readOnly
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Uploaded on: {new Date(selectedTemplate.createdAt).toLocaleString()}
-              </p>
-            </div>
+        <div className="flex justify-end mb-4 hidden md:block">
+          <Link href="/codeTemplate/createNew">
+            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition mr-4">
+              + Create New Template
+            </button>
           </Link>
+
+          <button
+            onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+            className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+          >
+            View Template
+          </button>
+        </div>
+        {selectedTemplate ? (
+          <div className="p-4 bg-white shadow rounded">
+            <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
+            <textarea
+              className="w-full h-40 border rounded p-2"
+              value={selectedTemplate.code}
+              readOnly
+            />
+            <p className="bottom-4 right-4 text-sm text-gray-500">
+              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
+            </p>
+          </div>
         ) : (
-          <p>Select a template from the sidebar.</p>
+          <div className="space-y-4">
+            {templates && templates.length > 0 ? (
+              templates.map((template) => (
+                <div key={template.id} className="p-4 bg-white shadow rounded">
+                  <h3 className="text-lg font-bold">{template.title}</h3>
+                  <p className="text-sm text-gray-600">{template.description}</p>
+                  <textarea
+                    className="w-full h-20 border rounded mt-2 p-2"
+                    value={template.code}
+                    readOnly
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center">No templates available.</p>
+            )}
+          </div>
         )}
       </main>
     </div>
   );
 
   const renderBlogPosts = () => (
-      <div className="flex min-h-screen">
-        {/* Sidebar */}
-        <aside className="w-1/4 bg-white p-4 shadow-md">
-          <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
-          <div className="space-y-2">
-            {blogPosts.map((post) => (
-                <button
-                    key={post.id}
-                    className={`w-full p-2 text-left rounded hover:bg-blue-100 ${
-                        selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                    }`}
-                    onClick={() => setSelectedBlogPost(post)}
-                >
-                  {post.title}
-                </button>
-            ))}
+    <div className="flex min-h-screen">
+      <aside className="w-1/4 bg-white p-4 shadow-md">
+        <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
+        <div className="space-y-2">
+          {blogPosts.map((post) => (
+            <button
+              key={post.id}
+              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                }`}
+            >
+              {post.title}
+            </button>
+          ))}
+        </div>
+      </aside>
+      <main className="flex-1 p-6">
+        <div className="flex justify-end mb-4 hidden md:block">
+          <Link href="/Createblogposts">
+            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+              + Create Blog Post
+            </button>
+          </Link>
+        </div>
+        {selectedBlogPost ? (
+          <div className="p-4 bg-white shadow rounded">
+            <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
+            <button
+              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+            >
+              View Blog
+            </button>
           </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 p-6">
-          {/* Button to create a new blog post */}
-          <div className="flex justify-end mb-4">
-            <Link href="/Createblogposts">
-              <button
-                  className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition"
-              >
-                + Create Blog Post
-              </button>
-            </Link>
-          </div>
-
-          {selectedBlogPost ? (
-              <div className="p-4 bg-white shadow rounded">
-                <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
-                <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
-                <p className="text-sm mb-4">{selectedBlogPost.content}</p>
-                <p className="text-xs text-gray-500 mt-2">
-                  Published on: {new Date(selectedBlogPost.createdAt).toLocaleString()}
-                </p>
-
-                {/* Associated Code Templates */}
-                {selectedBlogPost.codeTemplates && selectedBlogPost.codeTemplates.length > 0 ? (
-                    <div className="mt-4">
-                      <h4 className="text-lg font-semibold mb-2">Associated Code Templates:</h4>
-                      <ul className="list-disc pl-6">
-                        {selectedBlogPost.codeTemplates.map((template) => (
-                            <li key={template.id}>
-                              <Link href={`/codeTemplate/${template.id}`} className="text-blue-500 hover:underline">
-                                {template.title}
-                              </Link>
-                            </li>
-                        ))}
-                      </ul>
-                    </div>
-                ) : (
-                    <p className="text-gray-500 mt-4">No associated code templates.</p>
-                )}
-              </div>
-          ) : (
-              <p>Select a blog post from the sidebar.</p>
-          )}
-        </main>
-      </div>
-  );
-
-
-  // Render Profile Section
-  const renderProfile = () => (
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">User Profile</h2>
-        {user ? (
-            <div className="p-4 bg-white rounded shadow">
-              <p>Name: {`${user.firstname} ${user.lastname}`}</p>
-              <p>Email: {user.email}</p>
-              {user.avatar && <img src={user.avatar} alt="Avatar" className="w-32 h-32 rounded-full mt-4"/>}
-            </div>
         ) : (
-            <p>No user information available.</p>
+          <p>Select a blog post from the sidebar.</p>
         )}
-      </section>
+      </main>
+    </div>
   );
 
   return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 to-blue-300">
-        {/* Navbar */}
-        <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
-          <Link href="/" className="text-xl font-bold">
-            Scriptorium
-          </Link>
-          <div className="md:hidden flex items-center">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 to-blue-300">
+      <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
+        <Link href="/" className="text-xl font-bold">
+          Scriptorium
+        </Link>
+        <div className="md:hidden flex items-center">
           <button onClick={handleMenuToggle}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
-
           {menuOpen && (
             <div className="absolute top-16 right-4 w-48 bg-white text-black rounded-lg shadow-lg">
               <button
@@ -348,12 +379,20 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               >
                 Logout
               </button>
-              {/* Add "Create New Template" to Mobile Menu */}
-              <Link href="/codeTemplate/createNew" passHref>
-                <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                  + Create New Template
-                </button>
-              </Link>
+              {activeTab === "templates" && (
+                <Link href="/codeTemplate/createNew">
+                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                    + Create New Template
+                  </button>
+                </Link>
+              )}
+              {activeTab === "blogposts" && (
+                <Link href="/Createblogposts">
+                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                    + Create Blog Post
+                  </button>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -366,51 +405,15 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           </button>
         </div>
       </nav>
-
-      {/* Create New Template Button for Desktop */}
-      <div className="absolute top-20 right-8 hidden md:block">
-        <Link href="/codeTemplate/createNew" passHref>
-          <button className="px-6 py-3 bg-green-500 text-white font-bold rounded-lg shadow-lg hover:bg-green-600 transition">
-            + Create New Template
-          </button>
-        </Link>
-      </div>
-
-      {/* Main Content */}
       <div className="p-8">
         {renderTabs()}
         {activeTab === "templates" && renderTemplates()}
-        {activeTab === "profile" && renderProfile()}
         {activeTab === "blogposts" && renderBlogPosts()}
       </div>
-
-      {/* Footer */}
       <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">
         <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
       </footer>
     </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   );
 }
+
