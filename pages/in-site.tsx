@@ -345,15 +345,15 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 to-blue-300">
-      <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
-        <Link href="/" className="text-xl font-bold">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-100 to-gray-300">
+      <nav className="w-full flex items-center justify-between p-4 bg-opacity-90 backdrop-blur-md shadow-md fixed z-10">
+        <Link href="/" className="text-2xl font-semibold text-gray-800">
           Scriptorium
         </Link>
         <div className="md:hidden flex items-center">
           <button onClick={handleMenuToggle}>
             <svg
-              className="w-6 h-6"
+              className="w-6 h-6 text-gray-800"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -398,23 +398,30 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           )}
         </div>
         <div className="hidden md:flex space-x-4">
-          <button onClick={handleProfileClick} className="px-4 py-2 bg-white text-blue-600 rounded-lg">
+          <button
+            onClick={handleProfileClick}
+            className="px-4 py-2 rounded-full text-blue-600 bg-white shadow-md hover:bg-blue-600 hover:text-white transition-all"
+          >
             Profile
           </button>
-          <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-lg">
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-full text-white bg-red-600 shadow-md hover:bg-red-700 transition-all"
+          >
             Logout
           </button>
         </div>
       </nav>
-      <div className="p-8">
+      <div className="pt-20 p-8">
         {renderTabs()}
         {activeTab === "templates" && renderTemplates()}
         {activeTab === "blogposts" && renderBlogPosts()}
       </div>
-      <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">
+      <footer className="w-full py-4 bg-gray-200 text-gray-600 text-center shadow-inner">
         <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
       </footer>
     </div>
   );
+  
 }
 
