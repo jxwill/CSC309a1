@@ -183,111 +183,146 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     </div>
   );
 
-  const renderTemplates = () => (
-    <div className="flex min-h-screen">
-      <aside className="w-1/4 bg-white p-4 shadow-md">
-        <h2 className="text-lg font-bold mb-4">Templates</h2>
-        <div className="space-y-2">
-          {templates.map((template) => (
-            <button
-              key={template.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-                }`}
-              onClick={() => setSelectedTemplate(template)}
-            >
-              {template.title}
-            </button>
-          ))}
-        </div>
-      </aside>
-      <main className="flex-1 p-6">
-        <div className="flex justify-between items-center mb-4 hidden md:flex">
-          {/* Left Section: Buttons */}
-          <div className="flex space-x-4">
-            <Link href="/codeTemplate/createNew">
-              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-                + Create New Template
+  const renderTemplates = () => {
+    const itemsPerPage = 10;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(templates.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedTemplates = templates.slice(startIndex, endIndex);
+
+    const handlePageChange = (page: number) => {
+      if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+    };
+    return (
+      <div className="flex min-h-screen">
+        <aside className="w-1/4 bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold mb-4">Templates</h2>
+          <div className="space-y-2">
+            {paginatedTemplates.map((template) => (
+              <button
+                key={template.id}
+                className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
+                  }`}
+                onClick={() => setSelectedTemplate(template)}
+              >
+                {template.title}
               </button>
-            </Link>
+            ))}
+          </div>
+          {/* Pagination controls at the bottom */}
+          <div className="flex justify-between items-center mt-4 mb-4">
             <button
-              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md mx-1 disabled:opacity-50"
             >
-              View Template
+              Previous
+            </button>
+            <span className="text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md mx-1 disabled:opacity-50"
+            >
+              Next
             </button>
           </div>
+        </aside>
+        <main className="flex-1 p-6">
+          <div className="flex justify-between items-center mb-4 hidden md:flex">
+            {/* Left Section: Buttons */}
+            <div className="flex space-x-4">
+              <Link href="/codeTemplate/createNew">
+                <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                  + Create New Template
+                </button>
+              </Link>
+              <button
+                onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
+                className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+              >
+                View Template
+              </button>
+            </div>
 
-          {/* Right Section: Search */}
-          <div className="flex space-x-4">
-            {/* Dropdown to choose search criteria */}
-            <select
-              value={searchBy}
-              onChange={(e) => setSearchBy(e.target.value)} // Update state on change
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="title">Search by Title</option>
-              {/* <option value="description">Search by Description</option> */}
-              <option value="author">Search by Author</option>
-              <option value="tags">Search by Tag</option>
-            </select>
+            {/* Right Section: Search */}
+            <div className="flex space-x-4">
+              {/* Dropdown to choose search criteria */}
+              <select
+                value={searchBy}
+                onChange={(e) => setSearchBy(e.target.value)} // Update state on change
+                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="title">Search by Title</option>
+                {/* <option value="description">Search by Description</option> */}
+                <option value="author">Search by Author</option>
+                <option value="tags">Search by Tag</option>
+              </select>
 
-            {/* Search input */}
-            <input
-              type="text"
-              placeholder="Search templates..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)} // Update state on change
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              {/* Search input */}
+              <input
+                type="text"
+                placeholder="Search templates..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)} // Update state on change
+                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
 
-            {/* Search button */}
-            <button
-              onClick={handleSearch} // Trigger search logic
-              className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              Search
-            </button>
+              {/* Search button */}
+              <button
+                onClick={handleSearch} // Trigger search logic
+                className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+              >
+                Search
+              </button>
+            </div>
           </div>
-        </div>
 
-        {selectedTemplate ? (
-          <div className="p-4 bg-white shadow rounded">
-            <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
-            <textarea
-              className="w-full h-40 border rounded p-2"
-              value={selectedTemplate.code}
-              readOnly
-            />
-            <p className="bottom-4 right-4 text-sm text-gray-500">
-              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {templates && templates.length > 0 ? (
-              templates.map((template) => (
-                <div key={template.id} className="p-4 bg-white shadow rounded">
-                  <h3 className="text-lg font-bold">{template.title}</h3>
-                  <p className="text-sm text-gray-600">{template.description}</p>
-                  <textarea
-                    className="w-full h-20 border rounded mt-2 p-2"
-                    value={template.code}
-                    readOnly
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center">No templates available.</p>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
-  );
+          {selectedTemplate ? (
+            <div className="p-4 bg-white shadow rounded">
+              <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
+              <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
+              <textarea
+                className="w-full h-40 border rounded p-2"
+                value={selectedTemplate.code}
+                readOnly
+              />
+              <p className="bottom-4 right-4 text-sm text-gray-500">
+                <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {templates && templates.length > 0 ? (
+                templates.map((template) => (
+                  <div key={template.id} className="p-4 bg-white shadow rounded">
+                    <h3 className="text-lg font-bold">{template.title}</h3>
+                    <p className="text-sm text-gray-600">{template.description}</p>
+                    <textarea
+                      className="w-full h-20 border rounded mt-2 p-2"
+                      value={template.code}
+                      readOnly
+                    />
+                    <p className="text-sm text-gray-500 mt-2">
+                      <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-center">No templates available.</p>
+              )}
+            </div>
+          )}
+        </main>
+      </div>
+    )
+  };
 
   const renderBlogPosts = () => (
     <div className="flex min-h-screen">
