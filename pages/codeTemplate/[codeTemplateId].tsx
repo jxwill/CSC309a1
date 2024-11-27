@@ -4,6 +4,7 @@ import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import cookie from "cookie";
 import { GetServerSideProps } from "next";
+import { EditorState } from "@codemirror/state";
 
 interface UserProfile {
     id: number;
@@ -109,14 +110,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                 doc: codeTemplate.code || '',
                 extensions: [
                     basicSetup,
-                    javascript(), // Add JavaScript syntax highlighting
-                    // EditorView.updateListener.of((update) => {
-                    //     if (update.docChanged) {
-                    //         // Capture the updated code from the editor
-                    //         const updatedCode = update.state.doc.toString();
-                    //         setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
-                    //     }
-                    // }),
+                    javascript(), // Add JavaScript syntax rules for indentation
                 ],
                 parent: editorContainer.current,
             });
@@ -544,7 +538,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: '28vh',
+                    minHeight: '50vh',
                 }}
             >
                 {/* Main content */}

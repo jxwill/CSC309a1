@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router'; // For navigation
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
+import { java } from '@codemirror/lang-java';
+import { cpp } from '@codemirror/lang-cpp';
+import { css } from '@codemirror/lang-css';
+
 import cookie from "cookie";
 import { GetServerSideProps } from "next";
 interface UserProfile {
@@ -82,13 +87,33 @@ const EmptyCodeTemplatePage = ({ user, token }: template) => {
             editorRef.current.destroy();
             editorRef.current = null;
         }
+        let languageExtension;
+        switch (codeTemplate.language) {
+            case "JavaScript":
+                languageExtension = javascript();
+                break;
+            case "Python":
+                languageExtension = python();
+                break;
+            case "Java":
+                languageExtension = java();
+                break;
+            case "C":
+                languageExtension = cpp();
+            case "C++":
+                languageExtension = cpp();
+                break;
+            default:
+                languageExtension = null;
+        }
+
 
         // Initialize CodeMirror editor
         const editor = new EditorView({
             doc: codeTemplate.code || '',
             extensions: [
                 basicSetup,
-                javascript(),
+                languageExtension || css(),
                 EditorView.updateListener.of((update) => {
                     if (update.docChanged) {
                         // Update state with editor content on change
@@ -136,7 +161,7 @@ const EmptyCodeTemplatePage = ({ user, token }: template) => {
     };
 
     return (
-        <div className="bg-gradient-to-br from-blue-100 to-blue-300">
+        <div className="bg-gradient-to-br from-blue-100 to-blue-300" style={{ minHeight: '100vh' }}>
             <header
                 style={{
                     backgroundColor: '#2196f3',
@@ -145,6 +170,8 @@ const EmptyCodeTemplatePage = ({ user, token }: template) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between', // Ensures proper spacing
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    position: 'relative',
                 }}
             >
                 {/* Home Button */}
