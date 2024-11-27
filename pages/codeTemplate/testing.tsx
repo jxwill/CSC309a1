@@ -103,38 +103,35 @@ const CodeTemplatePage = ({ user, token }: template) => {
     useEffect(() => {
         if (!editorContainer.current || !codeTemplate) return;
 
-        // Initialize the editor if it hasn't been created
-        if (!editorRef.current) {
-            const editor = new EditorView({
-                doc: codeTemplate.code || '',
-                extensions: [
-                    basicSetup,
-                    javascript(), // Add JavaScript syntax highlighting
-                    // EditorView.updateListener.of((update) => {
-                    //     if (update.docChanged) {
-                    //         // Capture the updated code from the editor
-                    //         const updatedCode = update.state.doc.toString();
-                    //         setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
-                    //     }
-                    // }),
-                ],
-                parent: editorContainer.current,
-            });
-
-            editorRef.current = editor;
-        } else {
-            // If the editor already exists, update the content
+        if (editorRef.current) {
+            // Update the editor content dynamically
             editorRef.current.dispatch({
                 changes: { from: 0, to: editorRef.current.state.doc.length, insert: codeTemplate.code },
             });
+            return;
         }
 
-        // Cleanup when the component unmounts or codeTemplate changes
+        // Initialize the editor only once
+        const editor = new EditorView({
+            doc: codeTemplate.code || '',
+            extensions: [
+                basicSetup,
+                javascript(),
+                EditorView.updateListener.of((update) => {
+                    if (update.docChanged) {
+                        const updatedCode = update.state.doc.toString();
+                        setCodeTemplate((prev) => ({ ...prev, code: updatedCode }));
+                    }
+                }),
+            ],
+            parent: editorContainer.current,
+        });
+
+        editorRef.current = editor;
+
         return () => {
-            if (editorRef.current) {
-                editorRef.current.destroy();
-                editorRef.current = null;
-            }
+            editor.destroy();
+            editorRef.current = null;
         };
     }, [codeTemplate]);
 
@@ -431,15 +428,11 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                             return;
                                         }
 
-                                        // Prepare the data to be sent
-                                        if (!editorRef.current) return;
-                                        const code = editorRef.current.state.doc.toString();
-
                                         const saveData = {
                                             title: codeTemplate.title,
                                             description: codeTemplate.description,
                                             tags: codeTemplate.tags,
-                                            code: code,
+                                            code: codeTemplate.code,
                                             language: codeTemplate.language,
                                             authorId: user.id,
                                         };
