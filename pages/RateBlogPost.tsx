@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import PopupModal from "./PopupModal";
 
 const RateBlogPost = ({
-                          postId,
-                          token,
-                          initialUpvotes = 0,
-                          initialDownvotes = 0,
-                          initialUserVote = 0,
-                      }: {
+    postId,
+    token,
+    initialUpvotes = 0,
+    initialDownvotes = 0,
+    initialUserVote = 0,
+}: {
     postId: number;
     token: string | null;
     initialUpvotes?: number;
@@ -103,9 +103,8 @@ const RateBlogPost = ({
                     {/* Upvote Button */}
                     <button
                         onClick={() => (userVote === 1 ? handleRate(0) : handleRate(1))}
-                        className={`flex items-center space-x-1 ${
-                            userVote === 1 ? "text-green-700" : "text-green-500 hover:text-green-700"
-                        }`}
+                        className={`flex items-center space-x-1 ${userVote === 1 ? "text-green-700" : "text-green-500 hover:text-green-700"
+                            }`}
                     >
                         <span>👍</span>
                         <span>{upvotes}</span>
@@ -114,9 +113,8 @@ const RateBlogPost = ({
                     {/* Downvote Button */}
                     <button
                         onClick={() => (userVote === -1 ? handleRate(0) : handleRate(-1))}
-                        className={`flex items-center space-x-1 ${
-                            userVote === -1 ? "text-red-700" : "text-red-500 hover:text-red-700"
-                        }`}
+                        className={`flex items-center space-x-1 ${userVote === -1 ? "text-red-700" : "text-red-500 hover:text-red-700"
+                            }`}
                     >
                         <span>👎</span>
                         <span>{downvotes}</span>
