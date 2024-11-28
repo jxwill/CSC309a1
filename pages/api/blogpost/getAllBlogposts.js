@@ -25,6 +25,7 @@ export default async function handler(req, res) {
                     comments: {
                         select: { id: true }, // Include comment count
                     },
+                    ratings: { select: { id: false, value: true } },
                 },
             });
 

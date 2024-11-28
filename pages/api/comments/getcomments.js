@@ -29,9 +29,28 @@ export default async function handler(req, res) {
     const comments = await prisma.comment.findMany({
       where: {
         blogPostId: parseInt(blogPostId),
-        //...(isAdmin ? {} : { hidden: false }) // Only show non-hidden comments for non-admin users
+        //...(isAdmin ? {} : { hidden: false }) // Uncomment if you want to restrict hidden comments for non-admin users
       },
       orderBy: { createdAt: 'asc' }, // Order comments by creation date
+      include: {
+        author: {
+          select: {
+            firstname: true,
+            lastname: true,
+          },
+        },
+        replies: { // Include replies for each comment
+          orderBy: { createdAt: 'asc' }, // Order replies by creation date
+          include: {
+            author: {
+              select: {
+                firstname: true,
+                lastname: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     res.status(200).json(comments);
@@ -40,4 +59,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: 'Failed to fetch comments' });
   }
 }
-

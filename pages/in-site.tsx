@@ -43,7 +43,7 @@ interface Comment {
   content: string;
   authorId: number;
   blogPostId: number;
-  parentCommentId?: number;
+  parentCommentId: number;
   createdAt: string; // or Date depending on your API serialization
   updatedAt: string; // or Date
   author: {
@@ -51,7 +51,7 @@ interface Comment {
     firstname: string; // Add other fields from the User model as needed
     lastname: string;
   };
-  replies?: Comment[]; // Recursive type for nested replies
+  replies: Comment[]; // Recursive type for nested replies
   Rating: Rating[];
 }
 
@@ -125,8 +125,8 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [commentsError, setCommentsError] = useState(null);
   const [sortedBlogPosts, setSortedBlogPosts] = useState<BlogPost[]>([]); // For sorted data
   const [isSorted, setIsSorted] = useState(false); // Track if sorted
-  const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null); // Tracks the comment being replied to
-  const [replyContents, setReplyContents] = useState({}); // Object to store reply contents for each comment
+  const [replyToCommentId, setReplyToCommentId] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -176,54 +176,63 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
   };
 
-  const handleReply = (commentId) => {
-    setReplyToCommentId(commentId); // Set the comment being replied to
-    setReplyContents((prev) => ({ ...prev, [commentId]: "" })); // Initialize the reply content for this comment
+  const handleReplyClick = (commentId) => {
+    setReplyToCommentId(commentId); // Set the comment ID to reply to
   };
 
-  const handleSubmitReply = async (commentId) => {
-    if (!token) {
-      alert("You need to log in to reply to a comment.");
+
+  const handleSubmitReply = async (parentCommentId) => {
+    if (!replyContent.trim()) {
+      alert("Reply content cannot be empty.");
       return;
     }
 
     try {
-      const response = await fetch("/api/comments/createcomments", {
+      const response = await fetch(`/api/comments/${parentCommentId}/replycomments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          blogPostId: selectedBlogPost.id,
-          parentCommentId: commentId,
-          content: replyContents[commentId],
-        }),
+        body: JSON.stringify({ content: replyContent }),
       });
 
       if (response.ok) {
-        const { comment } = await response.json();
-        console.log("Reply submitted successfully:", comment);
-
-        // Update the comments state with the new reply
-        setSelectedBlogPost((prev) => ({
-          ...prev,
-          comments: updateCommentsWithReply(prev.comments, comment),
-        }));
-
-        // Reset the reply input for this comment
-        setReplyContents((prev) => ({ ...prev, [commentId]: "" }));
+        const data = await response.json();
+        setReplyContent("");
         setReplyToCommentId(null);
+
+        // Update comments state with the new reply
+        const addReplyToComments = (comments, parentCommentId, reply) => {
+          return comments.map((comment) => {
+            if (comment.id === parentCommentId) {
+              return {
+                ...comment,
+                replies: comment.replies
+                    ? [...comment.replies, reply]
+                    : [reply],
+              };
+            } else if (comment.replies) {
+              return {
+                ...comment,
+                replies: addReplyToComments(comment.replies, parentCommentId, reply),
+              };
+            }
+            return comment;
+          });
+        };
+
+        setComments((prevComments) =>
+            addReplyToComments(prevComments, parentCommentId, data.reply)
+        );
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to submit reply.");
+        alert("Failed to submit reply.");
       }
     } catch (error) {
       console.error("Error submitting reply:", error);
-      alert("An error occurred while submitting your reply. Please try again.");
+      alert("An error occurred. Please try again.");
     }
   };
-
 
 
   const fetchComments = async (blogPostId) => {
@@ -259,20 +268,20 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       setCommentsLoading(false); // Reset loading state
     }
   };
-  
+
 
   const handleSelectBlogPost = (post) => {
     if (!post) {
       console.error("Invalid blog post selection.");
       return;
     }
-  
+
     setSelectedBlogPost(post); // Update the state for the selected blog post
-  
+
     // Optionally fetch comments for the selected blog post
     fetchComments(post.id);
   };
-  
+
   const getAvatarUrl = (user: { avatar?: string; firstname?: string; lastname?: string } | null): string => {
     if (!user || !user.avatar) {
       // Return the default avatar located at /public/picture/xxx.png
@@ -283,25 +292,25 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   
 
   
-  const updateCommentsWithReply = (comments, newReply) => {
-    if (!comments) return [];
-
-    return comments.map((comment) => {
-      // If this is the parent comment, add the new reply
-      if (comment.id === newReply.parentCommentId) {
-        return {
-          ...comment,
-          replies: [...(comment.replies || []), newReply],
-        };
-      }
-
-      // Recursively update nested replies
-      return {
-        ...comment,
-        replies: updateCommentsWithReply(comment.replies || [], newReply),
-      };
-    });
-  };
+  // const updateCommentsWithReply = (comments, newReply) => {
+  //   if (!comments) return [];
+  //
+  //   return comments.map((comment) => {
+  //     // If this is the parent comment, add the new reply
+  //     if (comment.id === newReply.parentCommentId) {
+  //       return {
+  //         ...comment,
+  //         replies: [...(comment.replies || []), newReply],
+  //       };
+  //     }
+  //
+  //     // Recursively update nested replies
+  //     return {
+  //       ...comment,
+  //       replies: updateCommentsWithReply(comment.replies || [], newReply),
+  //     };
+  //   });
+  // };
 
 
 
@@ -406,6 +415,86 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
   };
 
+  const CommentItem = ({
+                         comment,
+                         onReplyClick,
+                         onSubmitReply,
+                         replyToCommentId,
+                         replyContent,
+                         setReplyContent,
+                         handleReport,
+                       }) => (
+      <div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
+        <div>
+          <p className="text-gray-800">{comment.content}</p>
+          {comment.author ? (
+              <span className="block text-sm text-gray-500 mt-2">
+          <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+        </span>
+          ) : (
+              <span className="block text-sm text-gray-500 mt-2 italic">
+          <strong>By:</strong> Anonymous
+        </span>
+          )}
+        </div>
+
+        <div className="flex space-x-4 mt-4">
+          {/* Report Button */}
+          <button
+              onClick={() => handleReport(comment.id, "Comment")}
+              className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+          >
+            Report Comment
+          </button>
+
+          {/* Reply Button */}
+          <button
+              onClick={() => onReplyClick(comment.id)}
+              className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+          >
+            Reply
+          </button>
+        </div>
+
+        {/* Reply Form */}
+        {replyToCommentId === comment.id && (
+            <div className="mt-4">
+        <textarea
+            className="w-full p-2 border rounded-lg"
+            placeholder="Write your reply..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+        ></textarea>
+              <button
+                  onClick={() => onSubmitReply(comment.id)}
+                  className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+              >
+                Submit Reply
+              </button>
+            </div>
+        )}
+
+        {/* Render Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+            <div className="mt-4 pl-6 border-l-2 border-gray-200">
+              {comment.replies.map((reply) => (
+                  <CommentItem
+                      key={reply.id}
+                      comment={reply}
+                      onReplyClick={onReplyClick}
+                      onSubmitReply={onSubmitReply}
+                      replyToCommentId={replyToCommentId}
+                      replyContent={replyContent}
+                      setReplyContent={setReplyContent}
+                      handleReport={handleReport}
+                  />
+              ))}
+            </div>
+        )}
+      </div>
+  );
+
+
 
   const handleRateComment = async (commentId, value) => {
     if (!token) {
@@ -471,7 +560,73 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       },
     });
   };
-  
+
+
+  const topLevelComments = comments.filter((comment) => comment.parentCommentId === null);
+
+  const renderComments = (comments) => {
+    return comments.map((comment) => (
+        <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
+          <div>
+            <p className="text-gray-800">{comment.content}</p>
+            {comment.author ? (
+                <span className="block text-sm text-gray-500 mt-2">
+            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+          </span>
+            ) : (
+                <span className="block text-sm text-gray-500 mt-2 italic">
+            <strong>By:</strong> Anonymous
+          </span>
+            )}
+          </div>
+
+          <div className="flex space-x-4 mt-4">
+            {/* Report Button */}
+            <button
+                onClick={() => handleReport(comment.id, "Comment")}
+                className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+            >
+              Report Comment
+            </button>
+
+            {/* Conditionally render the Reply button only for top-level comments */}
+            {comment.parentCommentId === null && (
+                <button
+                    onClick={() => handleReplyClick(comment.id)}
+                    className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+                >
+                  Reply
+                </button>
+            )}
+          </div>
+
+          {/* Render the Reply Form if replyToCommentId matches */}
+          {replyToCommentId === comment.id && (
+              <div className="mt-4 w-full">
+          <textarea
+              className="w-full p-2 border rounded-lg"
+              placeholder="Write your reply..."
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+          ></textarea>
+                <button
+                    onClick={() => handleSubmitReply(comment.id)}
+                    className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+                >
+                  Submit Reply
+                </button>
+              </div>
+          )}
+
+          {/* Render Replies */}
+          {comment.replies && comment.replies.length > 0 && (
+              <div className="ml-8 mt-4">
+                {renderComments(comment.replies)}
+              </div>
+          )}
+        </div>
+    ));
+  };
 
 
   const handleSortByRating = async () => {
@@ -606,13 +761,15 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     const startIndex = (currentPage - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
     const paginatedBlogPosts = blogPosts.slice(startIndex, endIndex);
-  
+
     const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
-  
+
+
+
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
@@ -672,106 +829,77 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         {/* Main Content */}
         <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
           {selectedBlogPost ? (
-            <div className="p-6 bg-white shadow-lg rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800">
-                {selectedBlogPost.title}
-              </h3>
-              <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
-              <div className="prose max-w-none">
-                <p>{selectedBlogPost.content}</p>
-              </div>
-              <div className="mt-6">
+              <div className="p-6 bg-white shadow-lg rounded-lg">
+                <h3 className="text-2xl font-bold mb-4 text-gray-800">
+                  {selectedBlogPost.title}
+                </h3>
+                <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
+                <div className="prose max-w-none">
+                  <p>{selectedBlogPost.content}</p>
+                </div>
+                <div className="mt-6">
                 <span className="block text-sm text-gray-500">
                   <strong>Created:</strong>{" "}
                   {selectedBlogPost.createdAt
-                    ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
-                    : "N/A"}
+                      ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
+                      : "N/A"}
                 </span>
-                <span className="block text-sm text-gray-500">
+                  <span className="block text-sm text-gray-500">
                   <strong>Updated:</strong>{" "}
-                  {selectedBlogPost.updatedAt
-                    ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
-                    : "N/A"}
+                    {selectedBlogPost.updatedAt
+                        ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
+                        : "N/A"}
                 </span>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
-                  className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
-                >
-                  Report Post
-                </button>
-              </div>
-  
-              {/* Comments Section */}
-              <div className="mt-8">
-                <h4 className="text-lg font-bold mb-4">Comments</h4>
-                {commentsLoading ? (
-                  <p className="text-gray-500">Loading comments...</p>
-                ) : commentsError ? (
-                  <p className="text-red-500">Error: {commentsError}</p>
-                ) : comments.length > 0 ? (
-                  <div className="space-y-4">
-                    {comments.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="p-4 bg-gray-100 rounded-lg shadow flex justify-between items-start"
-                      >
-                        <div>
-                          <p className="text-gray-800">{comment.content}</p>
-                          {comment.author ? (
-                            <span className="block text-sm text-gray-500 mt-2">
-                              <strong>By:</strong>{" "}
-                              {`${comment.author.firstname} ${comment.author.lastname}`}
-                            </span>
-                          ) : (
-                            <span className="block text-sm text-gray-500 mt-2 italic">
-                              <strong>By:</strong> Anonymous
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleReport(comment.id, "Comment")} // Pass comment ID and type
-                          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
-                        >
-                          Report Comment
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No comments yet.</p>
-                )}
-              </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button
+                      onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
+                      className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+                  >
+                    Report Post
+                  </button>
+                </div>
+                <div className="mt-8">
+                  {/* Rating Section */}
+                  <RateBlogPost postId={selectedBlogPost.id} token={token}/>
 
-              <div className="mt-8">
-                {/* Rating Section */}
-                <RateBlogPost postId={selectedBlogPost.id} token={token} />
-  
-                {/* Add Comment Section */}
-                <AddComment postId={selectedBlogPost.id} token={token} />
+                  {/* Add Comment Section */}
+                  <AddComment postId={selectedBlogPost.id} token={token}/>
+                </div>
+
+                {/* Comments Section */}
+                <div className="mt-8">
+                  <h4 className="text-lg font-bold mb-4">Comments</h4>
+                  {commentsLoading ? (
+                      <p className="text-gray-500">Loading comments...</p>
+                  ) : commentsError ? (
+                      <p className="text-red-500">Error: {commentsError}</p>
+                  ) : topLevelComments.length > 0 ? (
+                      <div className="space-y-4">
+                        {renderComments(topLevelComments)}
+                      </div>
+                  ) : (
+                      <p className="text-gray-500">No comments yet.</p>
+                  )}
+                </div>
+
               </div>
-            </div>
           ) : (
-            <p className="text-center text-gray-600 font-medium">
-              Select a blog post from the sidebar.
-            </p>
+              <p className="text-center text-gray-600 font-medium">
+                Select a blog post from the sidebar.
+              </p>
           )}
         </main>
       </div>
     );
   };
-  
-  
-  
-  
-  
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
-      {/* Navbar */}
-      <nav className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white shadow-lg fixed top-0 z-20">
+      <div className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
+        {/* Navbar */}
+        <nav
+            className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white shadow-lg fixed top-0 z-20">
         {/* Logo */}
         <Link
           href="/logout"
