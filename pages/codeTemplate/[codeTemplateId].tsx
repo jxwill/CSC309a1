@@ -64,6 +64,8 @@ const CodeTemplatePage = ({ user, token }: template) => {
     const [codeTemplate, setCodeTemplate] = useState(null);
     const [terminalInput, setTerminalInput] = useState('');
     const [terminalOutput, setTerminalOutput] = useState('');
+    const [authorFirstname, setAuthorFirstname] = useState('');
+    const [authorLastname, setAuthorLastname] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const router = useRouter();
@@ -86,11 +88,19 @@ const CodeTemplatePage = ({ user, token }: template) => {
                 if (response.ok) {
                     const data = await response.json();
                     setCodeTemplate(data[0]);
+                    if (data[0] && data[0].author) {
+                        setAuthorFirstname(data[0].author.firstname);
+                        setAuthorLastname(data[0].author.lastname);
+                    }
+                    else {
+                        setAuthorFirstname('');
+                        setAuthorLastname('');
+                    }
                 } else {
                     setError('Failed to fetch code template.');
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Error fetching the code template.', err);
                 setError('Error fetching the code template.');
             } finally {
                 setLoading(false);
@@ -133,6 +143,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
         };
     }, [codeTemplate]);
 
+
     const handleLanguageChange = async (newLanguage) => {
         try {
             const response = await fetch(
@@ -149,12 +160,15 @@ const CodeTemplatePage = ({ user, token }: template) => {
 
             if (response.ok) {
                 const updatedTemplate = await response.json();
+                // setAuthorFirstname(updatedTemplate.author.firstname);
+                // setAuthorLastname(updatedTemplate.author.lastname);
                 setCodeTemplate(updatedTemplate); // Update local state with new language
             } else {
                 alert('Failed to update language. Please try again.');
             }
         } catch (err) {
             console.error(err);
+            console.log(err);
             alert('Error updating language.');
         }
     };
@@ -225,12 +239,12 @@ const CodeTemplatePage = ({ user, token }: template) => {
                             {codeTemplate.title}{' '}
                             <span
                                 style={{
-                                    fontSize: '1rem', // Smaller font size
-                                    fontWeight: '300', // Lighter font weight
-                                    color: '#555', // Slightly lighter color
+                                    fontSize: '1rem',
+                                    fontWeight: '300',
+                                    color: '#555',
                                 }}
                             >
-                                by {codeTemplate.author.firstname} {codeTemplate.author.lastname}
+                                by {authorFirstname} {authorLastname}
                             </span>
                         </h2>
                         <p
