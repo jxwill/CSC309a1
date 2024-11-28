@@ -7,6 +7,7 @@ interface UserProfile {
   id: number;
   firstname: string;
   lastname: string;
+  avatar:string;
   email: string;
 }
 
@@ -43,9 +44,14 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     };
   }
 
+  const baseUrl =
+    req.headers.host && req.headers.host.includes("localhost")
+      ? `http://${req.headers.host}` // Use HTTP for localhost
+      : `https://${req.headers.host}`; // Use HTTPS for deployed environments
+
   try {
     // Fetch user basic information
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+    const response = await fetch(`${baseUrl}/api/users/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -122,7 +128,7 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
   }, [user?.id, token]);
 
   const handleDelete = async (postId: number) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this blog post?");
+    const confirmDelete = window.confirm("Are youU sure you want to delete this blog post?");
     if (!confirmDelete) return;
 
     try {
@@ -147,19 +153,42 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
+      {/* Navigation Bar */}
+      <nav className="w-full p-4 bg-indigo-600 text-white shadow-lg">
+        <div className="flex items-center justify-start max-w-screen-xl mx-auto">
+          <button
+            onClick={() => router.push("/in-site")}
+            className="text-2xl font-bold hover:text-yellow-300 transition"
+          >
+            Scriptorium
+          </button>
+        </div>
+      </nav>
+      
       <div className="container mx-auto p-6">
         {/* Profile Header */}
-        <div className="bg-white shadow-lg rounded-lg p-6 flex items-center space-x-6">
-          <div className="w-20 h-20 rounded-full bg-purple-300 flex items-center justify-center text-white text-3xl font-bold">
-            {user.firstname[0]}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-700">
-              {user.firstname} {user.lastname}
-            </h1>
-            <p className="text-gray-500">{user.email}</p>
-          </div>
+      <div className="bg-white shadow-lg rounded-lg p-6 flex items-center space-x-6">
+        <div className="w-20 h-20 rounded-full overflow-hidden bg-purple-300 flex items-center justify-center">
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={`${user.firstname} ${user.lastname}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-white text-3xl font-bold">
+              {user.firstname[0]}
+            </span>
+          )}
         </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-700">
+            {user.firstname} {user.lastname}
+          </h1>
+          <p className="text-gray-500">{user.email}</p>
+        </div>
+      </div>
+
 
         {/* Blog Posts Section */}
         <div className="mt-8">

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
@@ -66,6 +68,18 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-100 to-blue-100">
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 w-full bg-indigo-500 text-white shadow-lg z-50">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+          <button
+            onClick={() => router.push("/")}
+            className="text-2xl font-bold hover:text-yellow-300 transition"
+          >
+            Scriptorium
+          </button>
+        </div>
+      </nav>
+      
       <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-lg">
         <h1
           className="text-3xl font-bold text-center mb-6 text-blue-600"

@@ -9,6 +9,7 @@ import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for
 
 
 interface UserProfile {
+  id:string;
   firstname: string;
   lastname: string;
   email: string;
@@ -33,8 +34,8 @@ interface BlogPost {
   codeTemplates: CodeTemplate[];
   createdAt: string;
   updatedAt: string;
-  comments: Comment[]
-  ratings: Rating[]
+  comments: Comment[];
+  ratings: Rating[];
 }
 
 interface Comment {
@@ -109,6 +110,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
+  const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const [searchBy, setSearchBy] = useState("title");
@@ -118,8 +120,9 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [searchCriteria, setSearchCriteria] = useState("title"); // Default search criteria
   const [searchQuery, setSearchQuery] = useState(""); // Input value
   const [filterBy, setFilterBy] = useState("title");
-  const [loading, setLoading] = useState(false); // Loading indicator
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [sortBy, setSortBy] = useState("rating");
+  const [commentsError, setCommentsError] = useState(null);
   const [sortedBlogPosts, setSortedBlogPosts] = useState<BlogPost[]>([]); // For sorted data
   const [isSorted, setIsSorted] = useState(false); // Track if sorted
   const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null); // Tracks the comment being replied to
@@ -221,6 +224,65 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
   };
 
+
+
+  const fetchComments = async (blogPostId) => {
+    if (!blogPostId) {
+      console.error("Blog post ID is required to fetch comments.");
+      return;
+    }
+  
+    // Set loading state
+    setCommentsLoading(true);
+    setCommentsError(null); // Clear any existing errors
+  
+    try {
+      const response = await fetch(`/api/comments/getcomments?blogPostId=${blogPostId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Include the token for authorization
+        },
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data); // Set fetched comments
+      } else {
+        const errorData = await response.json();
+        setCommentsError(errorData.error || "Failed to fetch comments."); // Set error if the response is not OK
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      setCommentsError("An error occurred while fetching comments."); // Handle fetch errors
+    } finally {
+      setCommentsLoading(false); // Reset loading state
+    }
+  };
+  
+
+  const handleSelectBlogPost = (post) => {
+    if (!post) {
+      console.error("Invalid blog post selection.");
+      return;
+    }
+  
+    setSelectedBlogPost(post); // Update the state for the selected blog post
+  
+    // Optionally fetch comments for the selected blog post
+    fetchComments(post.id);
+  };
+  
+  const getAvatarUrl = (user: { avatar?: string; firstname?: string; lastname?: string } | null): string => {
+    if (!user || !user.avatar) {
+      // Return the default avatar located at /public/picture/xxx.png
+      return "/picture/xxx.png"; // Ensure this file exists in the public/picture directory
+    }
+    return user.avatar;
+  };
+  
+
+  
   const updateCommentsWithReply = (comments, newReply) => {
     if (!comments) return [];
 
@@ -394,6 +456,23 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
   };
 
+  const handleReport = (contentId, contentType) => {
+    if (!user?.id) {
+      alert("You must be logged in to report content.");
+      return;
+    }
+  
+    router.push({
+      pathname: "/reportpage",
+      query: {
+        contentId,
+        contentType,
+        userId: user.id, // Pass the logged-in user's ID
+      },
+    });
+  };
+  
+
 
   const handleSortByRating = async () => {
     if (!selectedBlogPost?.id) {
@@ -431,152 +510,101 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   };
 
   const renderTemplates = () => {
-    const itemsPerPage = 10;
-
+    const itemsPerPage = 5; // Number of templates per page
     const totalPages = Math.ceil(templates.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedTemplates = templates.slice(startIndex, endIndex);
-
-    const handlePageChange = (page: number) => {
+  
+    const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
+  
     return (
-      <div className="flex min-h-screen">
-        <aside className="w-1/4 bg-white p-4 shadow-md">
-          <h2 className="text-lg font-bold mb-4">Templates</h2>
-          <div className="space-y-2">
+      <div className="flex flex-col md:flex-row min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-full md:w-1/4 bg-white p-6 shadow-md rounded-lg mb-4 md:mb-0">
+          <h2 className="text-lg font-bold mb-6 text-gray-800">Code Templates</h2>
+          <div className="space-y-4">
             {paginatedTemplates.map((template) => (
               <button
                 key={template.id}
-                className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-                  }`}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
+                  selectedTemplate?.id === template.id
+                    ? "bg-indigo-500 text-white shadow-lg"
+                    : "bg-gray-100 hover:bg-indigo-200"
+                }`}
                 onClick={() => setSelectedTemplate(template)}
               >
                 {template.title}
               </button>
             ))}
           </div>
-          {/* Pagination controls at the bottom */}
-          <div className="flex justify-between items-center mt-4 mb-4">
+  
+          {/* Pagination Controls */}
+          <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md mx-1 disabled:opacity-50"
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
             >
               Previous
             </button>
-            <span className="text-gray-600">
+            <span className="text-gray-600 text-sm sm:text-base font-medium flex-grow sm:flex-grow-0 text-center">
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md mx-1 disabled:opacity-50"
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
             >
               Next
             </button>
           </div>
         </aside>
+  
+        {/* Main Content */}
         <main className="flex-1 p-6">
-          <div className="flex justify-between items-center mb-4 hidden md:flex">
-            {/* Left Section: Buttons */}
-            <div className="flex space-x-4">
-              <Link href="/codeTemplate/createNew">
-                <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-                  + Create New Template
-                </button>
-              </Link>
-              <button
-                onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-                className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-              >
-                View Template
-              </button>
-            </div>
-
-            {/* Right Section: Search */}
-            <div className="flex space-x-4">
-              {/* Dropdown to choose search criteria */}
-              <select
-                value={searchBy}
-                onChange={(e) => setSearchBy(e.target.value)} // Update state on change
-                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="title">Search by Title</option>
-                {/* <option value="description">Search by Description</option> */}
-                <option value="author">Search by Author</option>
-                <option value="tags">Search by Tag</option>
-              </select>
-
-              {/* Search input */}
-              <input
-                type="text"
-                placeholder="Search templates..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)} // Update state on change
-                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-
-              {/* Search button */}
-              <button
-                onClick={handleSearch} // Trigger search logic
-                className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-              >
-                Search
-              </button>
-            </div>
-          </div>
-
           {selectedTemplate ? (
-            <div className="p-4 bg-white shadow rounded">
-              <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
+            <div className="p-6 bg-white shadow-md rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">
+                {selectedTemplate.title}
+              </h3>
+              <p className="text-gray-600 mb-6">{selectedTemplate.description}</p>
               <textarea
-                className="w-full h-40 border rounded p-2"
+                className="w-full h-60 border rounded-lg p-4 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={selectedTemplate.code}
                 readOnly
               />
-              <p className="bottom-4 right-4 text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-4">
                 <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
               </p>
+              {/* View Full Template Button */}
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)}
+                  className="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg shadow-md hover:bg-blue-600 transition"
+                >
+                  View Full Template
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {templates && templates.length > 0 ? (
-                templates.map((template) => (
-                  <div key={template.id} className="p-4 bg-white shadow rounded">
-                    <h3 className="text-lg font-bold">{template.title}</h3>
-                    <p className="text-sm text-gray-600">{template.description}</p>
-                    <textarea
-                      className="w-full h-20 border rounded mt-2 p-2"
-                      value={template.code}
-                      readOnly
-                    />
-                    <p className="text-sm text-gray-500 mt-2">
-                      <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-center">No templates available.</p>
-              )}
-            </div>
+            <p className="text-center text-gray-600">Select a template from the sidebar.</p>
           )}
         </main>
       </div>
-    )
+    );
   };
-
-
+  
+  
   const renderBlogPosts = () => {
-    const postsPerPage = 5; // Define how many posts to show per page
+    const postsPerPage = 5; // Number of posts per page
     const totalPages = Math.ceil(blogPosts.length / postsPerPage);
     const startIndex = (currentPage - 1) * postsPerPage;
     const endIndex = startIndex + postsPerPage;
-  
     const paginatedBlogPosts = blogPosts.slice(startIndex, endIndex);
   
     const handlePageChange = (page) => {
@@ -586,13 +614,11 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     };
   
     return (
-      <div className="flex min-h-screen">
+      <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
-        <aside className="w-1/4 bg-white p-4 shadow-md">
-          <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
-  
-          {/* Sort by Rating Button */}
-          <div className="mb-4">
+        <aside className="w-full md:w-1/4 bg-white p-6 shadow-lg rounded-lg">
+          <h2 className="text-lg font-bold mb-6 text-gray-800">Blog Posts</h2>
+          <div className="mb-6">
             <button
               onClick={() => {
                 if (isSorted) {
@@ -601,159 +627,135 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
                   handleSortBlogPosts("rating"); // Fetch and sort by rating
                 }
               }}
-              className="w-full p-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
+              className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:from-indigo-600 hover:to-purple-600 transition-all"
             >
               {isSorted ? "Show Default Order" : "Sort by Rating"}
             </button>
           </div>
-  
-          {/* Blog Posts List */}
-          <div className="space-y-2">
-            {isSorted && sortedBlogPosts.length > 0 ? (
-              sortedBlogPosts.slice(startIndex, endIndex).map((post) => (
-                <div key={post.id} className="flex justify-between items-center">
-                  <button
-                    role="button"
-                    tabIndex={0}
-                    className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
-                      selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                    }`}
-                    onClick={() => setSelectedBlogPost(post)}
-                  >
-                    {post.title}
-                  </button>
-                  <p className="text-xs text-gray-400">
-                    Rating:{" "}
-                    {post.ratings
-                      ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
-                      : 0}
-                  </p>
-                </div>
-              ))
-            ) : paginatedBlogPosts.length > 0 ? (
-              paginatedBlogPosts.map((post) => (
-                <div key={post.id} className="flex justify-between items-center">
-                  <button
-                    role="button"
-                    tabIndex={0}
-                    className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
-                      selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                    }`}
-                    onClick={() => setSelectedBlogPost(post)}
-                  >
-                    {post.title}
-                  </button>
-                  <p className="text-xs text-gray-400">
-                    Rating:{" "}
-                    {post.ratings
-                      ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
-                      : 0}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p>No blog posts available.</p>
-            )}
+          <div className="space-y-4">
+            {(isSorted ? sortedBlogPosts : paginatedBlogPosts).map((post) => (
+              <button
+                key={post.id}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
+                  selectedBlogPost?.id === post.id
+                    ? "bg-indigo-500 text-white shadow-lg"
+                    : "bg-gray-100 hover:bg-indigo-200"
+                }`}
+                onClick={() => handleSelectBlogPost(post)}
+              >
+                {post.title}
+              </button>
+            ))}
           </div>
   
           {/* Pagination Controls */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full max-w-lg mx-auto">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50"
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
             >
               Previous
             </button>
-            <span className="text-gray-600">
+            <span className="text-gray-600 text-sm sm:text-base font-medium flex-grow sm:flex-grow-0 text-center">
               Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50"
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
             >
               Next
             </button>
           </div>
-        </aside>
-  
+        </aside> 
         {/* Main Content */}
-        <main className="flex-1 p-6">
-          {/* Search Bar and Create Button */}
-          <div className="flex justify-between mb-6 items-center">
-            {/* Create Blog Post Button */}
-            <Link href="/Createblogposts">
-              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-                + Create Blog Post
-              </button>
-            </Link>
-  
-            {/* Filter Dropdown */}
-            <select
-              value={filterBy}
-              onChange={(e) => setFilterBy(e.target.value)}
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="title">Search by Title</option>
-              <option value="content">Search by Content</option>
-              <option value="tags">Search by Tags</option>
-              <option value="codeTemplate">Search by Code Template</option>
-            </select>
-  
-            {/* Search Bar */}
-            <div className="flex space-x-4">
-              <input
-                type="text"
-                placeholder="Search blog posts..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-  
-              <button
-                onClick={handleSearchBlogpost}
-                className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-              >
-                Search
-              </button>
-            </div>
-          </div>
-  
-          {/* Selected Blog Post Details */}
+        <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
           {selectedBlogPost ? (
-            <div className="p-4 bg-white shadow rounded">
-              <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                {selectedBlogPost.description}
-              </p>
-              <div className="prose">
+            <div className="p-6 bg-white shadow-lg rounded-lg">
+              <h3 className="text-2xl font-bold mb-4 text-gray-800">
+                {selectedBlogPost.title}
+              </h3>
+              <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
+              <div className="prose max-w-none">
                 <p>{selectedBlogPost.content}</p>
               </div>
-              <div className="mt-4">
-                <span className="text-xs text-gray-500">
-                  Created:{" "}
+              <div className="mt-6">
+                <span className="block text-sm text-gray-500">
+                  <strong>Created:</strong>{" "}
                   {selectedBlogPost.createdAt
                     ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
                     : "N/A"}
                 </span>
-                <br />
-                <span className="text-xs text-gray-500">
-                  Updated:{" "}
+                <span className="block text-sm text-gray-500">
+                  <strong>Updated:</strong>{" "}
                   {selectedBlogPost.updatedAt
                     ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
                     : "N/A"}
                 </span>
               </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
+                  className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+                >
+                  Report Post
+                </button>
+              </div>
   
-              {/* Rating Section */}
-              <RateBlogPost postId={selectedBlogPost.id} token={token} />
+              {/* Comments Section */}
+              <div className="mt-8">
+                <h4 className="text-lg font-bold mb-4">Comments</h4>
+                {commentsLoading ? (
+                  <p className="text-gray-500">Loading comments...</p>
+                ) : commentsError ? (
+                  <p className="text-red-500">Error: {commentsError}</p>
+                ) : comments.length > 0 ? (
+                  <div className="space-y-4">
+                    {comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="p-4 bg-gray-100 rounded-lg shadow flex justify-between items-start"
+                      >
+                        <div>
+                          <p className="text-gray-800">{comment.content}</p>
+                          {comment.author ? (
+                            <span className="block text-sm text-gray-500 mt-2">
+                              <strong>By:</strong>{" "}
+                              {`${comment.author.firstname} ${comment.author.lastname}`}
+                            </span>
+                          ) : (
+                            <span className="block text-sm text-gray-500 mt-2 italic">
+                              <strong>By:</strong> Anonymous
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleReport(comment.id, "Comment")} // Pass comment ID and type
+                          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+                        >
+                          Report Comment
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No comments yet.</p>
+                )}
+              </div>
+
+              <div className="mt-8">
+                {/* Rating Section */}
+                <RateBlogPost postId={selectedBlogPost.id} token={token} />
   
-              {/* Add Comment Section */}
-              <AddComment postId={selectedBlogPost.id} token={token} />
+                {/* Add Comment Section */}
+                <AddComment postId={selectedBlogPost.id} token={token} />
+              </div>
             </div>
           ) : (
-            <p>Select a blog post from the sidebar.</p>
+            <p className="text-center text-gray-600 font-medium">
+              Select a blog post from the sidebar.
+            </p>
           )}
         </main>
       </div>
@@ -761,18 +763,31 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   };
   
   
+  
+  
+  
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-100 to-blue-300">
-      <nav className="w-full flex items-center justify-between p-4 bg-blue-600 text-white shadow-lg">
-        <Link href="/" className="text-xl font-bold">
-          Scriptorium
+    <div className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
+      {/* Navbar */}
+      <nav className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white shadow-lg fixed top-0 z-20">
+        {/* Logo */}
+        <Link
+          href="/logout"
+          className="text-2xl font-bold hover:text-yellow-300 transition flex items-center space-x-2"
+        >
+          <span className="material-icons">Dashboard Scriptorium</span>
         </Link>
+
+        {/* Hamburger Menu for Mobile */}
         <div className="md:hidden flex items-center">
-          <button onClick={handleMenuToggle}>
+          <button
+            onClick={handleMenuToggle}
+            className="text-white hover:text-yellow-300 transition"
+          >
             <svg
-              className="w-6 h-6"
+              className="w-8 h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -785,55 +800,180 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               />
             </svg>
           </button>
+
+          {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute top-16 right-4 w-48 bg-white text-black rounded-lg shadow-lg">
-              <button
-                onClick={handleProfileClick}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-              {activeTab === "templates" && (
-                <Link href="/codeTemplate/createNew">
-                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                    + Create New Template
+            <div className="absolute top-16 right-4 w-56 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-30">
+              <ul className="divide-y divide-gray-200">
+                {/* Tab Switcher */}
+                <li>
+                  <button
+                    onClick={() => {
+                      setActiveTab('templates');
+                      setMenuOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                      activeTab === 'templates' ? 'font-bold' : ''
+                    }`}
+                  >
+                    Code Templates
                   </button>
-                </Link>
-              )}
-              {activeTab === "blogposts" && (
-                <Link href="/Createblogposts">
-                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                    + Create Blog Post
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setActiveTab('blogposts');
+                      setMenuOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                      activeTab === 'blogposts' ? 'font-bold' : ''
+                    }`}
+                  >
+                    Blog Posts
                   </button>
-                </Link>
-              )}
+                </li>
+
+                {/* Add Buttons for Create New Template/Blog Post */}
+                {activeTab === "templates" && (
+                  <li>
+                    <Link href="/codeTemplate/createNew">
+                      <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                        + Create New Template
+                      </button>
+                    </Link>
+                  </li>
+                )}
+                {activeTab === "blogposts" && (
+                  <li>
+                    <Link href="/Createblogposts">
+                      <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                        + Create Blog Post
+                      </button>
+                    </Link>
+                  </li>
+                )}
+
+                {/* Profile and Logout */}
+                <li>
+                  <button
+                    onClick={handleProfileClick}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Profile
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </ul>
             </div>
           )}
         </div>
-        <div className="hidden md:flex space-x-4">
-          <button onClick={handleProfileClick} className="px-4 py-2 bg-white text-blue-600 rounded-lg">
-            Profile
+
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center space-x-6">
+          {/* Avatar */}
+          
+          <button
+            onClick={handleProfileClick}
+            className="px-4 py-2 bg-white text-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:text-white transition flex items-center space-x-2"
+          >
+            <span className="material-icons">Profile</span>
           </button>
-          <button onClick={handleLogout} className="px-4 py-2 bg-red-600 text-white rounded-lg">
-            Logout
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition flex items-center space-x-2"
+          >
+            <span className="material-icons">Logout</span>
           </button>
+
+          <div className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-lg cursor-pointer">
+          <img
+            src={getAvatarUrl(user)}
+            alt="User Avatar"
+            className="w-full h-full object-cover"
+          />
+        </div>
         </div>
       </nav>
-      <div className="p-8">
-        {renderTabs()}
-        {activeTab === "templates" && renderTemplates()}
-        {activeTab === "blogposts" && renderBlogPosts()}
+
+  
+      {/* Main Content */}
+      <div className="pt-20 px-8 flex flex-1">
+        {/* Sidebar */}
+        <aside className="w-1/4 bg-white p-6 shadow-lg rounded-lg hidden md:block">
+          <h2 className="text-lg font-semibold mb-6 text-gray-800">Navigation</h2>
+          <div className="space-y-4">
+            {['templates', 'blogposts'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`block w-full text-left px-4 py-2 rounded-lg transition duration-300 ${
+                  activeTab === tab
+                    ? 'bg-indigo-500 text-white shadow-lg'
+                    : 'bg-gray-100 hover:bg-indigo-200'
+                }`}
+              >
+                {tab === 'templates' ? 'Templates' : 'Blog Posts'}
+              </button>
+            ))}
+          </div>
+  
+          {/* Add Buttons */}
+          {activeTab === "templates" && (
+            <div className="mt-6">
+              <Link href="/codeTemplate/createNew">
+                <button className="w-full px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                  + Create New Template
+                </button>
+              </Link>
+            </div>
+          )}
+          {activeTab === "blogposts" && (
+            <div className="mt-6">
+              <Link href="/Createblogposts">
+                <button className="w-full px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition">
+                  + Create Blog Post
+                </button>
+              </Link>
+            </div>
+          )}
+        </aside>
+  
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">
+              {activeTab === 'templates' ? 'Templates' : 'Blog Posts'}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              {activeTab === 'templates'
+                ? 'Browse and manage your code templates.'
+                : 'Explore and interact with engaging blog posts.'}
+            </p>
+          </div>
+          {activeTab === 'templates' && renderTemplates()}
+          {activeTab === 'blogposts' && renderBlogPosts()}
+        </main>
       </div>
-      <footer className="w-full py-4 bg-blue-600 text-white text-center z-10">
-        <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
+  
+      {/* Footer */}
+      <footer className="w-full py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center shadow-inner mt-6">
+        <p className="font-medium">
+          Designed with ❤️ by Jianxin Liu, Eric Qi Li, Ximei Lin
+        </p>
       </footer>
     </div>
   );
+  
+  
+  
+  
+  
 }
 
