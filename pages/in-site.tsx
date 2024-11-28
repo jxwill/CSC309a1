@@ -2,15 +2,15 @@ import { useState, useEffect } from "react";
 import cookie from "cookie";
 import { GetServerSideProps } from "next";
 import Link from "next/link";
-<<<<<<< Updated upstream
-=======
-import RateBlogPost from "pages/RateBlogPost";
-import AddComment from "pages/AddComment";
+import RateBlogPost from "./RateBlogPost";
+import AddComment from "./AddComment";
 import RateComment from "pages/rateComments";
->>>>>>> Stashed changes
 import { useRouter } from "next/router";
+import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for upvote/downvote
+
 
 interface UserProfile {
+  id:string;
   firstname: string;
   lastname: string;
   email: string;
@@ -36,17 +36,35 @@ interface BlogPost {
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
+  ratings: Rating[];
 }
 
 interface Comment {
   id: number;
   content: string;
-  author: string;
+  authorId: number;
   blogPostId: number;
-  createdAt: string;
-  updatedAt: string;
+  parentCommentId?: number;
+  createdAt: string; // or Date depending on your API serialization
+  updatedAt: string; // or Date
+  author: {
+    id: number;
+    firstname: string; // Add other fields from the User model as needed
+    lastname: string;
+  };
+  replies?: Comment[]; // Recursive type for nested replies
+  Rating: Rating[];
 }
 
+interface Rating {
+  id: number;
+  value: number
+  blogPostId: number
+  commentId: number
+  user: UserProfile
+  blogPost: BlogPost
+  comment: Comment
+}
 
 interface InSiteProps {
   user: UserProfile | null;
@@ -93,39 +111,33 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CodeTemplate | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
+  const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
-  const [loadingPosts, setLoadingPosts] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
   const [searchBy, setSearchBy] = useState("title");
   const [searchInput, setSearchInput] = useState("");
-  const [newComment, setNewComment] = useState(""); // State for new comment input
+  const [newComment, setNewComment] = useState(""); // For new comment input
+  const [comments, setComments] = useState([]); // For the list of comments
+  const [searchCriteria, setSearchCriteria] = useState("title"); // Default search criteria
+  const [searchQuery, setSearchQuery] = useState(""); // Input value
+  const [filterBy, setFilterBy] = useState("title");
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [sortBy, setSortBy] = useState("rating");
+  const [commentsError, setCommentsError] = useState(null);
+  const [sortedBlogPosts, setSortedBlogPosts] = useState<BlogPost[]>([]); // For sorted data
+  const [isSorted, setIsSorted] = useState(false); // Track if sorted
+  const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null); // Tracks the comment being replied to
+  const [replyContents, setReplyContents] = useState({}); // Object to store reply contents for each comment
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchResults, setSearchResults] = useState([]);
 
-
-
-<<<<<<< Updated upstream
-    if (!searchInput.trim()) {
-      alert("Please enter a search query.");
-      return;
+  useEffect(() => {
+    if (user && user.role === "Admin") {
+      router.push("/manage");
     }
-    try {
-      router.push({
-        pathname: "/codeTemplate/search",
-        query: {
-          options: searchBy,
-          info: searchInput,
-        },
-      })
-    } catch (error) {
-      console.error("Error fetching search results:", error);
-      setTemplates([]); // Clear results in case of an error
-    }
-  };
+  }, [user, router]);
 
-  if (user && user.role === "Admin") {
-    router.push("/manage");
-  }
-=======
+
 
   const handleReply = (commentId) => {
     setReplyToCommentId(commentId); // Set the comment being replied to
@@ -288,7 +300,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
 
 
->>>>>>> Stashed changes
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -309,69 +320,22 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   }, []);
 
   useEffect(() => {
-    const fetchBlogPostsWithComments = async () => {
-      setLoadingPosts(true);
+    const fetchBlogPosts = async () => {
       try {
-        const response = await fetch("/api/blogpost/getAllBlogposts", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`, // Use the provided token for secure access
-          },
-        });
-  
-        if (response.ok && response.headers.get("content-type")?.includes("application/json")) {
+        const response = await fetch("/api/blogpost/getAllBlogposts");
+        if (response.ok) {
           const { data } = await response.json();
-  
-          const postsWithComments = await Promise.all(
-            data.map(async (post: BlogPost) => {
-              try {
-                setLoadingComments(true);
-                const commentsResponse = await fetch(
-                  `/api/comments/getcomments?blogPostId=${post.id}`,
-                  {
-                    method: "GET",
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }
-                );
-  
-                if (
-                  commentsResponse.ok &&
-                  commentsResponse.headers.get("content-type")?.includes("application/json")
-                ) {
-                  const comments = await commentsResponse.json();
-                  return { ...post, comments };
-                } else {
-                  console.error(`Invalid response for comments on post ${post.id}`);
-                }
-              } catch (err) {
-                console.error(`Failed to fetch comments for post ${post.id}:`, err);
-              } finally {
-                setLoadingComments(false);
-              }
-              return { ...post, comments: [] };
-            })
-          );
-  
-          setBlogPosts(postsWithComments);
-        } else {
-          console.error("Invalid response for blog posts:", await response.text());
+          setBlogPosts(data);
         }
       } catch (error) {
         console.error("Error fetching blog posts:", error);
-      } finally {
-        setLoadingPosts(false);
       }
     };
-  
+
     if (activeTab === "blogposts") {
-      fetchBlogPostsWithComments();
+      fetchBlogPosts();
     }
-  }, [activeTab, token]);
-  
-  
-  
+  }, [activeTab]);
 
   const handleLogout = async () => {
     await fetch("/api/users/logout", {
@@ -388,93 +352,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       router.push("/profile");
     }
   };
-
-  const handleReport = async (type: "blogPost" | "comment", id: number) => {
-    try {
-      // Prepare the API call for reporting
-      const response = await fetch("/api/report/report", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Use the provided token for secure access
-        },
-        body: JSON.stringify({ type, id }), // Pass the type (blogPost or comment) and the ID to the server
-      });
-  
-      if (response.ok) {
-        alert(`${type === "blogPost" ? "Blog post" : "Comment"} reported successfully.`);
-      } else {
-        const { error } = await response.json();
-        alert(`Failed to report: ${error}`);
-      }
-    } catch (error) {
-      console.error(`Error reporting ${type}:`, error);
-      alert("An error occurred while reporting.");
-    }
-  };
-
-  const handleAddComment = async (blogPostId: number) => {
-    if (!newComment.trim()) {
-      alert("Please enter a comment.");
-      return;
-    }
-  
-    try {
-      // Make an API request to create a comment
-      const response = await fetch("/api/comments/createcomments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Use the provided token for secure access
-        },
-        body: JSON.stringify({
-          blogPostId,
-          content: newComment.trim(),
-        }),
-      });
-  
-      if (response.ok) {
-        const { comment } = await response.json(); // Get the created comment
-  
-        // Ensure comments array exists and update state
-        setBlogPosts((prevBlogPosts) =>
-          prevBlogPosts.map((post) =>
-            post.id === blogPostId
-              ? {
-                  ...post,
-                  comments: post.comments
-                    ? [...post.comments, comment]
-                    : [comment], // Handle case where comments are undefined
-                }
-              : post
-          )
-        );
-
-
-        if (selectedBlogPost?.id === blogPostId) {
-          setSelectedBlogPost({
-            ...selectedBlogPost,
-            comments: selectedBlogPost.comments
-              ? [...selectedBlogPost.comments, comment]
-              : [comment],
-          });
-        }
-  
-        setNewComment(""); // Clear the input field
-        alert("Comment added successfully!");
-      } else {
-        const { error } = await response.json();
-        console.error("Error adding comment:", error);
-        alert(`Failed to add comment: ${error}`);
-      }
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      alert("An error occurred while adding the comment.");
-    }
-  };
-  
-  
-  
 
   const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
@@ -501,17 +378,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     </div>
   );
 
-<<<<<<< Updated upstream
-  const renderTemplates = () => (
-    <div className="flex min-h-screen">
-      <aside className="w-1/4 bg-white p-4 shadow-md">
-        <h2 className="text-lg font-bold mb-4">Templates</h2>
-        <div className="space-y-2">
-          {templates.map((template) => (
-            <button
-              key={template.id}
-              className={`w-full p-2 text-left rounded hover:bg-blue-100 ${selectedTemplate?.id === template.id ? "bg-blue-50" : ""
-=======
   const handleSortBlogPosts = async (sortBy) => {
     try {
       const response = await fetch(`/api/blogpost/sortBlogPosts?sortBy=${sortBy}`, {
@@ -665,206 +531,62 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
                   selectedTemplate?.id === template.id
                     ? "bg-indigo-500 text-white shadow-lg"
                     : "bg-gray-100 hover:bg-indigo-200"
->>>>>>> Stashed changes
                 }`}
-              onClick={() => setSelectedTemplate(template)}
-            >
-              {template.title}
-            </button>
-          ))}
-        </div>
-      </aside>
-      <main className="flex-1 p-6">
-        <div className="flex justify-between items-center mb-4 hidden md:flex">
-          {/* Left Section: Buttons */}
-          <div className="flex space-x-4">
-            <Link href="/codeTemplate/createNew">
-              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-                + Create New Template
-              </button>
-            </Link>
-            <button
-              onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)} // Redirect to another page
-              className="px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              View Template
-            </button>
-          </div>
-
-          {/* Right Section: Search */}
-          <div className="flex space-x-4">
-            {/* Dropdown to choose search criteria */}
-            <select
-              value={searchBy}
-              onChange={(e) => setSearchBy(e.target.value)} // Update state on change
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="title">Search by Title</option>
-              {/* <option value="description">Search by Description</option> */}
-              <option value="author">Search by Author</option>
-              <option value="tags">Search by Tag</option>
-            </select>
-
-            {/* Search input */}
-            <input
-              type="text"
-              placeholder="Search templates..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)} // Update state on change
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            {/* Search button */}
-            <button
-              onClick={handleSearch} // Trigger search logic
-              className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
-            >
-              Search
-            </button>
-          </div>
-        </div>
-
-        {selectedTemplate ? (
-          <div className="p-4 bg-white shadow rounded">
-            <h3 className="text-lg font-bold mb-2">{selectedTemplate.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">{selectedTemplate.description}</p>
-            <textarea
-              className="w-full h-40 border rounded p-2"
-              value={selectedTemplate.code}
-              readOnly
-            />
-            <p className="bottom-4 right-4 text-sm text-gray-500">
-              <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {templates && templates.length > 0 ? (
-              templates.map((template) => (
-                <div key={template.id} className="p-4 bg-white shadow rounded">
-                  <h3 className="text-lg font-bold">{template.title}</h3>
-                  <p className="text-sm text-gray-600">{template.description}</p>
-                  <textarea
-                    className="w-full h-20 border rounded mt-2 p-2"
-                    value={template.code}
-                    readOnly
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    <strong>Created On:</strong> {new Date(template.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center">No templates available.</p>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-
-  const renderBlogPosts = () => (
-    <div className="flex min-h-screen">
-      <aside className="w-1/4 bg-white p-4 shadow-md">
-        <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
-        <div className="space-y-2">
-          {loadingPosts ? (
-            <p className="text-center text-gray-500">Loading blog posts...</p>
-          ) : blogPosts.length > 0 ? (
-            blogPosts.map((post) => (
-              <div key={post.id} className="flex justify-between items-center">
-                <button
-                  className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
-                    selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                  }`}
-                  onClick={() => setSelectedBlogPost(post)}
-                >
-                  {post.title}
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-center text-gray-500">No blog posts available.</p>
-          )}
-        </div>
-      </aside>
-  
-      <main className="flex-1 p-6">
-        {selectedBlogPost ? (
-          <div className="p-4 bg-white shadow rounded">
-            <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">{selectedBlogPost.description}</p>
-            <div className="prose">
-              <p>{selectedBlogPost.content}</p>
-            </div>
-            <div className="mt-4">
-              <span className="text-xs text-gray-500">
-                Published: {new Date(selectedBlogPost.createdAt).toLocaleString()}
-              </span>
-              <br />
-              <span className="text-xs text-gray-500">
-                Updated: {new Date(selectedBlogPost.updatedAt).toLocaleString()}
-              </span>
-            </div>
-  
-            <div className="mt-4">
-              <button
-                onClick={() => handleReport("blogPost", selectedBlogPost.id)}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                onClick={() => setSelectedTemplate(template)}
               >
-                Report Blog Post
+                {template.title}
               </button>
-            </div>
+            ))}
+          </div>
   
-            <div className="mt-6">
-              <h4 className="text-lg font-semibold mb-4">Comments</h4>
-              {loadingComments ? (
-                <p className="text-center text-gray-500">Loading comments...</p>
-              ) : selectedBlogPost?.comments?.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedBlogPost.comments
-                    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                    .map((comment) => (
-                      <div key={comment.id} className="p-4 bg-gray-100 rounded shadow-md">
-                        <p className="text-gray-800">{comment.content}</p>
-                        <div className="flex justify-between mt-2 text-sm text-gray-500">
-                          <span>By: {comment.author || "Anonymous"}</span>
-                          <button
-                            onClick={() => handleReport("comment", comment.id)}
-                            className="text-red-500 hover:underline"
-                          >
-                            Report
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-500">No comments available.</p>
-              )}
+          {/* Pagination Controls */}
+          <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
+            >
+              Previous
+            </button>
+            <span className="text-gray-600 text-sm sm:text-base font-medium flex-grow sm:flex-grow-0 text-center">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
+            >
+              Next
+            </button>
+          </div>
+        </aside>
   
-              <div className="mt-4">
-                <textarea
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="w-full p-2 border rounded-lg"
-                />
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {selectedTemplate ? (
+            <div className="p-6 bg-white shadow-md rounded-lg">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">
+                {selectedTemplate.title}
+              </h3>
+              <p className="text-gray-600 mb-6">{selectedTemplate.description}</p>
+              <textarea
+                className="w-full h-60 border rounded-lg p-4 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                value={selectedTemplate.code}
+                readOnly
+              />
+              <p className="text-sm text-gray-500 mt-4">
+                <strong>Created On:</strong> {new Date(selectedTemplate.createdAt).toLocaleDateString()}
+              </p>
+              {/* View Full Template Button */}
+              <div className="mt-6 flex justify-end">
                 <button
-                  onClick={() => handleAddComment(selectedBlogPost.id)}
-                  className={`mt-2 px-4 py-2 rounded-lg transition ${
-                    newComment.trim()
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
-                  disabled={!newComment.trim()}
+                  onClick={() => router.push(`/codeTemplate/${selectedTemplate.id}`)}
+                  className="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg shadow-md hover:bg-blue-600 transition"
                 >
-                  Submit Comment
+                  View Full Template
                 </button>
               </div>
             </div>
-<<<<<<< Updated upstream
-=======
           ) : (
             <p className="text-center text-gray-600">Select a template from the sidebar.</p>
           )}
@@ -1027,16 +749,10 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           >
             <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
             <p className="text-sm text-gray-600">{result.description}</p>
->>>>>>> Stashed changes
           </div>
-        ) : (
-          <p>Select a blog post from the sidebar.</p>
-        )}
-      </main>
+        ))}
+      </div>
     </div>
-<<<<<<< Updated upstream
-  );
-=======
   ) : selectedBlogPost ? (
     <div className="p-6 bg-white shadow-lg rounded-lg">
       <h3 className="text-2xl font-bold mb-4 text-gray-800">{selectedBlogPost.title}</h3>
@@ -1128,22 +844,31 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
   
   
->>>>>>> Stashed changes
   
   
   
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-100 to-gray-300">
-      <nav className="w-full flex items-center justify-between p-4 bg-opacity-90 backdrop-blur-md shadow-md fixed z-10">
-        <Link href="/" className="text-2xl font-semibold text-gray-800">
-          Scriptorium
+    <div className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
+      {/* Navbar */}
+      <nav className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white shadow-lg fixed top-0 z-20">
+        {/* Logo */}
+        <Link
+          href="/logout"
+          className="text-2xl font-bold hover:text-yellow-300 transition flex items-center space-x-2"
+        >
+          <span className="material-icons">Dashboard Scriptorium</span>
         </Link>
+
+        {/* Hamburger Menu for Mobile */}
         <div className="md:hidden flex items-center">
-          <button onClick={handleMenuToggle}>
+          <button
+            onClick={handleMenuToggle}
+            className="text-white hover:text-yellow-300 transition"
+          >
             <svg
-              className="w-6 h-6 text-gray-800"
+              className="w-8 h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1156,62 +881,180 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               />
             </svg>
           </button>
+
+          {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute top-16 right-4 w-48 bg-white text-black rounded-lg shadow-lg">
-              <button
-                onClick={handleProfileClick}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-              {activeTab === "templates" && (
-                <Link href="/codeTemplate/createNew">
-                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                    + Create New Template
+            <div className="absolute top-16 right-4 w-56 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-30">
+              <ul className="divide-y divide-gray-200">
+                {/* Tab Switcher */}
+                <li>
+                  <button
+                    onClick={() => {
+                      setActiveTab('templates');
+                      setMenuOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                      activeTab === 'templates' ? 'font-bold' : ''
+                    }`}
+                  >
+                    Code Templates
                   </button>
-                </Link>
-              )}
-              {activeTab === "blogposts" && (
-                <Link href="/Createblogposts">
-                  <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                    + Create Blog Post
+                </li>
+                <li>
+                  <button
+                    onClick={() => {
+                      setActiveTab('blogposts');
+                      setMenuOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                      activeTab === 'blogposts' ? 'font-bold' : ''
+                    }`}
+                  >
+                    Blog Posts
                   </button>
-                </Link>
-              )}
+                </li>
+
+                {/* Add Buttons for Create New Template/Blog Post */}
+                {activeTab === "templates" && (
+                  <li>
+                    <Link href="/codeTemplate/createNew">
+                      <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                        + Create New Template
+                      </button>
+                    </Link>
+                  </li>
+                )}
+                {activeTab === "blogposts" && (
+                  <li>
+                    <Link href="/Createblogposts">
+                      <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                        + Create Blog Post
+                      </button>
+                    </Link>
+                  </li>
+                )}
+
+                {/* Profile and Logout */}
+                <li>
+                  <button
+                    onClick={handleProfileClick}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Profile
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </ul>
             </div>
           )}
         </div>
-        <div className="hidden md:flex space-x-4">
+
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center space-x-6">
+          {/* Avatar */}
+          
           <button
             onClick={handleProfileClick}
-            className="px-4 py-2 rounded-full text-blue-600 bg-white shadow-md hover:bg-blue-600 hover:text-white transition-all"
+            className="px-4 py-2 bg-white text-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:text-white transition flex items-center space-x-2"
           >
-            Profile
+            <span className="material-icons">Profile</span>
           </button>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 rounded-full text-white bg-red-600 shadow-md hover:bg-red-700 transition-all"
+            className="px-4 py-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition flex items-center space-x-2"
           >
-            Logout
+            <span className="material-icons">Logout</span>
           </button>
+
+          <div className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-lg cursor-pointer">
+          <img
+            src={getAvatarUrl(user)}
+            alt="User Avatar"
+            className="w-full h-full object-cover"
+          />
+        </div>
         </div>
       </nav>
-      <div className="pt-20 p-8">
-        {renderTabs()}
-        {activeTab === "templates" && renderTemplates()}
-        {activeTab === "blogposts" && renderBlogPosts()}
+
+  
+      {/* Main Content */}
+      <div className="pt-20 px-8 flex flex-1">
+        {/* Sidebar */}
+        <aside className="w-1/4 bg-white p-6 shadow-lg rounded-lg hidden md:block">
+          <h2 className="text-lg font-semibold mb-6 text-gray-800">Navigation</h2>
+          <div className="space-y-4">
+            {['templates', 'blogposts'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`block w-full text-left px-4 py-2 rounded-lg transition duration-300 ${
+                  activeTab === tab
+                    ? 'bg-indigo-500 text-white shadow-lg'
+                    : 'bg-gray-100 hover:bg-indigo-200'
+                }`}
+              >
+                {tab === 'templates' ? 'Templates' : 'Blog Posts'}
+              </button>
+            ))}
+          </div>
+  
+          {/* Add Buttons */}
+          {activeTab === "templates" && (
+            <div className="mt-6">
+              <Link href="/codeTemplate/createNew">
+                <button className="w-full px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                  + Create New Template
+                </button>
+              </Link>
+            </div>
+          )}
+          {activeTab === "blogposts" && (
+            <div className="mt-6">
+              <Link href="/Createblogposts">
+                <button className="w-full px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition">
+                  + Create Blog Post
+                </button>
+              </Link>
+            </div>
+          )}
+        </aside>
+  
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800">
+              {activeTab === 'templates' ? 'Templates' : 'Blog Posts'}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              {activeTab === 'templates'
+                ? 'Browse and manage your code templates.'
+                : 'Explore and interact with engaging blog posts.'}
+            </p>
+          </div>
+          {activeTab === 'templates' && renderTemplates()}
+          {activeTab === 'blogposts' && renderBlogPosts()}
+        </main>
       </div>
-      <footer className="w-full py-4 bg-gray-200 text-gray-600 text-center shadow-inner">
-        <p>Written by Jianxin Liu, Eric Qi Li, Ximei Lin</p>
+  
+      {/* Footer */}
+      <footer className="w-full py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center shadow-inner mt-6">
+        <p className="font-medium">
+          Designed with ❤️ by Jianxin Liu, Eric Qi Li, Ximei Lin
+        </p>
       </footer>
     </div>
   );
+  
+  
+  
+  
   
 }
 
