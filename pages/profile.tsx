@@ -128,7 +128,7 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
   }, [user?.id, token]);
 
   const handleDelete = async (postId: number) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this blog post?");
+    const confirmDelete = window.confirm("Are youU sure you want to delete this blog post?");
     if (!confirmDelete) return;
 
     try {
@@ -152,10 +152,10 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Navbar */}
-      <nav className="w-full p-4 bg-indigo-600 text-white shadow-lg fixed top-0 z-20">
-        <div className="max-w-screen-xl mx-auto flex justify-between items-center">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
+      {/* Navigation Bar */}
+      <nav className="w-full p-4 bg-indigo-600 text-white shadow-lg">
+        <div className="flex items-center justify-start max-w-screen-xl mx-auto">
           <button
             onClick={() => router.push("/in-site")}
             className="text-2xl font-bold hover:text-yellow-300 transition"
@@ -164,79 +164,124 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
           </button>
         </div>
       </nav>
-
-      {/* Main Content */}
-      <div className="pt-20 flex flex-col items-center bg-gray-100 py-6 px-4 sm:px-8">
-        <h1 className="text-3xl font-bold mb-6 text-indigo-600">Submit a Report</h1>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-md rounded-lg p-6 w-full max-w-lg"
-        >
-          {errorMessage && (
-            <div className="mb-4 p-4 bg-red-100 text-red-600 rounded">
-              {errorMessage}
-            </div>
-          )}
-          {successMessage && (
-            <div className="mb-4 p-4 bg-green-100 text-green-600 rounded">
-              {successMessage}
-            </div>
-          )}
-
-          {/* Content Information (Read-Only) */}
-          <div className="mb-4">
-            <p className="font-medium text-gray-700">
-              <strong>Content ID:</strong> {contentId}
-            </p>
-            <p className="font-medium text-gray-700">
-              <strong>Content Type:</strong> {contentType}
-            </p>
-          </div>
-
-          {/* Reason */}
-          <div className="mb-4">
-            <label htmlFor="reason" className="block font-medium text-gray-700">
-              Reason <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter the reason for reporting"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+      
+      <div className="container mx-auto p-6">
+        {/* Profile Header */}
+      <div className="bg-white shadow-lg rounded-lg p-6 flex items-center space-x-6">
+        <div className="w-20 h-20 rounded-full overflow-hidden bg-purple-300 flex items-center justify-center">
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={`${user.firstname} ${user.lastname}`}
+              className="w-full h-full object-cover"
             />
-          </div>
+          ) : (
+            <span className="text-white text-3xl font-bold">
+              {user.firstname[0]}
+            </span>
+          )}
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-700">
+            {user.firstname} {user.lastname}
+          </h1>
+          <p className="text-gray-500">{user.email}</p>
+        </div>
+      </div>
 
-          {/* Additional Information */}
-          <div className="mb-4">
-            <label
-              htmlFor="additionalInfo"
-              className="block font-medium text-gray-700"
-            >
-              Additional Information
-            </label>
-            <textarea
-              id="additionalInfo"
-              value={additionalInfo}
-              onChange={(e) => setAdditionalInfo(e.target.value)}
-              placeholder="Provide any additional information"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              rows={4}
-            />
-          </div>
 
-          {/* Submit Button */}
-          <div className="text-center">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 transition disabled:opacity-50"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Report"}
-            </button>
+        {/* Blog Posts Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">Your Blog Posts</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+                <p>Loading blog posts...</p>
+            ) : blogPosts.length > 0 ? (
+                blogPosts.map((post) => (
+                    <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
+                      <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
+                      <p className="text-sm text-gray-600 mt-2">{post.description}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Created: {new Date(post.createdAt).toLocaleDateString()}
+                      </p>
+
+                      {/* Button Section */}
+                      <div className="flex space-x-2 mt-4">
+                        {/* Edit Button */}
+                        <button
+                            onClick={() =>
+                                router.push({
+                                  pathname: `/editBlogposts/${post.id}`,
+                                  query: {token},
+                                })
+                            }
+                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-600 transition"
+                        >
+                          Edit
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                            onClick={() => handleDelete(post.id)} // Call the delete handler
+                            className="w-full bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                ))
+            ) : (
+                <p className="text-gray-500">No blog posts found.</p>
+            )}
           </div>
-        </form>
+        </div>
+
+
+        {/* Code Templates Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Created Code Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading code templates...</p>
+            ) : originalTemplates.length > 0 ? (
+              originalTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No code templates found.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Code Templates Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">You Forked Code Templates</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <p>Loading code templates...</p>
+            ) : forkedTemplates.length > 0 ? (
+              forkedTemplates.map((template) => (
+                <div key={template.id} className="bg-white shadow-md rounded-lg p-4"
+                  onClick={() => router.push(`/codeTemplate/${template.id}`)}>
+                  <h3 className="text-lg font-bold text-gray-800">{template.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(template.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No code templates found.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
