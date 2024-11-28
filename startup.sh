@@ -3,30 +3,19 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "Starting project setup..."
+echo "Starting environment setup..."
 
-# 1. Install npm dependencies
-echo "Installing npm packages..."
+# Install npm dependencies
+echo "Installing npm dependencies..."
 npm install
 
-# 2. Check for required environment variables
-echo "Checking environment variables..."
-REQUIRED_ENV_VARS=("DATABASE_URL" "JWT_SECRET")
+# Build the Docker image
+echo "Building Docker image..."
+docker build -t my-app .
 
-for var in "${REQUIRED_ENV_VARS[@]}"
-do
-  if [ -z "${!var}" ]; then
-    echo "ERROR: $var is not set."
-    exit 1
-  fi
-done
+# Set up containers (if needed with Docker Compose)
+echo "Setting up Docker containers..."
+docker-compose up -d
 
-# 3. Run Prisma migrations
-echo "Running database migrations..."
-npx prisma migrate deploy
+echo "Environment setup complete."
 
-# 4. Seed the database (create admin user)
-echo "Seeding the database with default admin user..."
-node prisma/seed.js
-
-echo "Project setup completed successfully."

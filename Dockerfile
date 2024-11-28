@@ -1,23 +1,22 @@
-# Use the official Node.js image
-FROM node:20
+# Use a compatible Node.js version
+FROM node:18.18-alpine
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json into the container
-COPY package*.json ./
+# Install necessary dependencies (e.g., git)
+RUN apk add --no-cache git
 
-# Install dependencies
+# Copy package.json and install dependencies
+COPY package.json ./
 RUN npm install
 
-# Copy the rest of the application into the container
+# Copy the rest of the application code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Expose the port Next.js runs on
+# Expose the application port
 EXPOSE 3000
 
-# Define the command to run your app
-CMD ["npm", "run", "dev"]
+# Start the application
+CMD ["npm", "start"]
+
