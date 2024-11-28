@@ -146,6 +146,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
     }, [codeTemplate]);
 
     const handleRunClick = async () => {
+        setTerminalOutput('Running...');
         try {
             const code = editorRef.current.state.doc.toString();
 
@@ -153,9 +154,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    code: code,
                     inputs: userInputs,
-                    language: codeTemplate.language,
                 }),
             });
 

@@ -2,15 +2,17 @@
 
 import prisma from "@/utils/db";
 import { spawn, spawnSync } from "child_process";
-import fs from "fs";
+import fs, { cp } from "fs";
 import path from "path";
+import { couldStartTrivia } from "typescript";
 
 export default async function handler(req, res) {
   try {
     if (req.method === "POST") {
       const { id } = req.query;
-      const { input } = req.body; // Read input from the request body
-
+      const { inputs: input } = req.body; // Read input from the request body
+        console.log(input);
+        console.log('Im here');
       // Fetch the template from the database using id
       const template = await prisma.codeTemplate.findUnique({
         where: { id: parseInt(id) },
@@ -149,10 +151,25 @@ ${code}
       // ** Wrap the execution in a Promise and await it **
       await new Promise((resolve, reject) => {
         // Spawn the child process
-        const childProcess = spawn(executeCommand, args, { stdio: "pipe" });
+        const childProcess = spawn(executeCommand, args, { stdio: "pipe", timeout: 10000 });
 
         let stdoutData = "";
         let stderrData = "";
+
+
+        // Feed input into stdin
+        if (input) {
+            console.log("Input received:", input);
+            const inputLines = input.split("\n");
+            inputLines.forEach((line, index) => console.log(`Writing to stdin [${index}]:`, line));
+            for (const line of inputLines) {
+                childProcess.stdin.write(line + "\n");
+            }
+        }
+        else {
+            console.log("No input received.");
+        }
+        childProcess.stdin.end();
 
         // Collect stdout data
         childProcess.stdout.on("data", (data) => {
@@ -165,13 +182,13 @@ ${code}
         });
 
         // Feed input into stdin
-        if (input) {
-          const inputLines = input.split("\n");
-          for (const line of inputLines) {
-            childProcess.stdin.write(line + "\n");
-          }
-        }
-        childProcess.stdin.end();
+        // if (input) {
+        //   const inputLines = input.split("\n");
+        //   for (const line of inputLines) {
+        //     childProcess.stdin.write(line + "\n");
+        //   }
+        // }
+        // childProcess.stdin.end();
 
         // Handle process close
         childProcess.on("close", (code) => {
@@ -186,7 +203,7 @@ ${code}
             resolve(); // Resolve the promise
           } else {
             res
-              .status(400)
+              .status(410)
               .json({ error: stderrData.trim() || "Execution failed." });
             resolve(); // Resolve even on error to prevent hanging
           }
