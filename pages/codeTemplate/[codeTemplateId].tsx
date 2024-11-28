@@ -62,6 +62,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
 const CodeTemplatePage = ({ user, token }: template) => {
     const [codeTemplate, setCodeTemplate] = useState(null);
+    const [terminalInput, setTerminalInput] = useState('');
     const [terminalOutput, setTerminalOutput] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -503,34 +504,119 @@ const CodeTemplatePage = ({ user, token }: template) => {
 
                 </div>
 
-                {/* Terminal Output Section */}
+                {/* Terminal Input and Output Section */}
                 <div
                     style={{
                         marginTop: '20px',
                         padding: '15px',
                         backgroundColor: '#f0f0f0',
                         borderRadius: '5px',
-                        height: '200px',
+                        height: '300px',
                         overflowY: 'auto',
                         boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
                         fontFamily: 'monospace',
                         whiteSpace: 'pre-wrap',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
                     }}
                 >
-                    <h3 style={{
-                        marginBottom: '10px',
-                        color: 'black',
-                        fontSize: '1.5rem',
-                    }}>Terminal Output</h3>
-                    <pre
-                        style={{
-                            color: terminalOutput.includes('error')
-                                ? 'red'
-                                : 'green',
-                        }}
-                    >
-                        {terminalOutput || 'Terminal output will appear here...'}
-                    </pre>
+                    {/* Terminal Input */}
+                    <div>
+                        <h3
+                            style={{
+                                marginBottom: '10px',
+                                color: 'black',
+                                fontSize: '1.5rem',
+                            }}
+                        >
+                            Terminal Input
+                        </h3>
+                        <textarea
+                            style={{
+                                width: '100%',
+                                height: '100px',
+                                padding: '10px',
+                                borderRadius: '5px',
+                                border: '1px solid #ddd',
+                                fontFamily: 'monospace',
+                                fontSize: '1rem',
+                                resize: 'none',
+                                color: '#333',
+                                backgroundColor: '#fff',
+                            }}
+                            placeholder="Enter your input here..."
+                            value={terminalInput}
+                            onChange={(e) => setTerminalInput(e.target.value)}
+                        />
+                        <button
+                            style={{
+                                marginTop: '10px',
+                                padding: '10px 20px',
+                                backgroundColor: '#4caf50',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '5px',
+                                cursor: 'pointer',
+                            }}
+                            onClick={async () => {
+                                try {
+                                    const response = await fetch(
+                                        `/api/codeTemplate/executeWithInput?id=${codeTemplate.id}`,
+                                        {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                Authorization: `Bearer ${token}`,
+                                            },
+                                            body: JSON.stringify({ input: terminalInput }),
+                                        }
+                                    );
+
+                                    const data = await response.json();
+
+                                    if (!response.ok) {
+                                        setTerminalOutput(
+                                            data.error || 'Execution failed with an unknown error.'
+                                        );
+                                    } else {
+                                        setTerminalOutput(
+                                            data.output || 'Execution completed with no output.'
+                                        );
+                                    }
+                                } catch (error) {
+                                    console.error('Error executing code with input:', error);
+                                    setTerminalOutput(
+                                        `Error: ${error.message || 'Unknown error occurred.'}`
+                                    );
+                                }
+                            }}
+                        >
+                            Run with Input
+                        </button>
+                    </div>
+
+                    {/* Terminal Output */}
+                    <div>
+                        <h3
+                            style={{
+                                marginBottom: '10px',
+                                color: 'black',
+                                fontSize: '1.5rem',
+                            }}
+                        >
+                            Terminal Output
+                        </h3>
+                        <pre
+                            style={{
+                                color: terminalOutput.includes('error')
+                                    ? 'red'
+                                    : 'green',
+                            }}
+                        >
+                            {terminalOutput || 'Terminal output will appear here...'}
+                        </pre>
+                    </div>
                 </div>
             </div>
 

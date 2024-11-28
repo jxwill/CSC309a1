@@ -8,6 +8,7 @@ export default async function handler(req, res) {
         if (req.method === "GET") {
             console.log(req.query);
             const { id } = req.query;
+            const { input } = req.query;
 
             // Fetch the template from the database using id
             const template = await prisma.codeTemplate.findUnique({
