@@ -71,6 +71,8 @@ const CodeTemplatePage = ({ user, token }: template) => {
     const router = useRouter();
     const { codeTemplateId } = router.query;
 
+    const [userInputs, setUserInputs] = useState('');
+
     const supportedLanguages = ['JavaScript', 'Python', 'Java', 'C', 'C++']; // Add more if needed
     const editorRef = useRef(null); // Reference for the CodeMirror instance
     const editorContainer = useRef(null); // Reference for the CodeMirror container
@@ -142,6 +144,35 @@ const CodeTemplatePage = ({ user, token }: template) => {
             }
         };
     }, [codeTemplate]);
+
+    const handleRunClick = async () => {
+        try {
+            const code = editorRef.current.state.doc.toString();
+
+            const response = await fetch(`/api/codeTemplate/execution?id=${codeTemplateId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: code,
+                    inputs: userInputs,
+                    language: codeTemplate.language,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setTerminalOutput(data.output || 'Execution completed with no output.');
+            } else {
+                setTerminalOutput(data.error || 'Execution failed with an unknown error.');
+            }
+        } catch (error) {
+            console.log(error);
+            console.error('Error executing code:', error);
+            setTerminalOutput('Error: ' + error.message);
+        }
+    };
+
 
 
     const handleLanguageChange = async (newLanguage) => {
@@ -357,27 +388,28 @@ const CodeTemplatePage = ({ user, token }: template) => {
 
                             <button
                                 onClick={async () => {
-                                    try {
-                                        const codeTemplateId = codeTemplate.id;
-                                        const response = await fetch(
-                                            `/api/codeTemplate/execution?id=${codeTemplateId}`
-                                        );
-                                        const data = await response.json();
-                                        if (!response.ok) {
-                                            setTerminalOutput(
-                                                data.error || 'Execution failed with an unknown error.'
-                                            );
-                                        } else {
-                                            setTerminalOutput(
-                                                data.output || 'Execution completed with no output.'
-                                            );
-                                        }
-                                    } catch (error) {
-                                        console.error('Error executing code:', error);
-                                        setTerminalOutput(
-                                            `Error: ${error.message || 'Unknown error occurred.'}`
-                                        );
-                                    }
+                                    //     try {
+                                    //         const codeTemplateId = codeTemplate.id;
+                                    //         const response = await fetch(
+                                    //             `/api/codeTemplate/execution?id=${codeTemplateId}`
+                                    //         );
+                                    //         const data = await response.json();
+                                    //         if (!response.ok) {
+                                    //             setTerminalOutput(
+                                    //                 data.error || 'Execution failed with an unknown error.'
+                                    //             );
+                                    //         } else {
+                                    //             setTerminalOutput(
+                                    //                 data.output || 'Execution completed with no output.'
+                                    //             );
+                                    //         }
+                                    //     } catch (error) {
+                                    //         console.error('Error executing code:', error);
+                                    //         setTerminalOutput(
+                                    //             `Error: ${error.message || 'Unknown error occurred.'}`
+                                    //         );
+                                    //     }
+                                    handleRunClick();
                                 }}
                                 className="run-button"
                             >
@@ -518,6 +550,15 @@ const CodeTemplatePage = ({ user, token }: template) => {
 
                 </div>
 
+                {/* Input Area */}
+                <textarea
+                    value={userInputs}
+                    onChange={(e) => setUserInputs(e.target.value)}
+                    placeholder="Enter your inputs here, each input on a new line."
+                    style={{ width: '100%', height: '100px', marginTop: '10px' }}
+                />
+
+
                 {/* Terminal Section */}
                 <div
                     style={{
@@ -549,7 +590,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                             </div>
                         ))}
 
-                        {/* Terminal Input */}
+                        {/* Terminal Input 
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <span style={{ marginRight: '5px', color: '#0f0' }}>$</span>
                             <input
@@ -608,7 +649,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                 }}
                                 placeholder="Type your input and press Enter..."
                             />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>
