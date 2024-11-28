@@ -571,246 +571,196 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   };
 
 
-  const renderBlogPosts = () => (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-1/4 bg-white p-4 shadow-md">
-        <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
-
-        {/* Sort by Rating Button */}
-        <div className="mb-4">
-          <button
-            onClick={() => {
-              if (isSorted) {
-                setIsSorted(false); // Reset to original blog posts
-              } else {
-                handleSortBlogPosts("rating"); // Fetch and sort by rating
-              }
-            }}
-            className="w-full p-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
-          >
-            {isSorted ? "Show Default Order" : "Sort by Rating"}
-          </button>
-        </div>
-
-        {/* Blog Posts List */}
-        <div className="space-y-2">
-          {isSorted && sortedBlogPosts.length > 0 ? (
-            sortedBlogPosts.map((post) => (
-              <div key={post.id} className="flex justify-between items-center">
-                <button
-                  role="button"
-                  tabIndex={0}
-                  className={`w-full text-left p-2 rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                    }`}
-                  onClick={() => setSelectedBlogPost(post)}
-                >
-                  {post.title}
-                </button>
-
-                <p className="text-xs text-gray-400">
-                  Rating:{" "}
-                  {post.ratings
-                    ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
-                    : 0}
-                </p>
-              </div>
-            ))
-          ) : blogPosts.length > 0 ? (
-            blogPosts.map((post) => (
-              <div key={post.id} className="flex justify-between items-center">
-                <button
-                  role="button"
-                  tabIndex={0}
-                  className={`w-full text-left p-2 rounded hover:bg-blue-100 ${selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
-                    }`}
-                  onClick={() => setSelectedBlogPost(post)}
-                >
-                  {post.title}
-                </button>
-                <p className="text-xs text-gray-400">
-                  Rating:{" "}
-                  {post.ratings
-                    ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
-                    : 0}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p>No blog posts available.</p>
-          )}
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 p-6">
-        {/* Search Bar and Create Button */}
-        <div className="flex justify-between mb-6 items-center">
-          {/* Create Blog Post Button */}
-          <Link href="/Createblogposts">
-            <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
-              + Create Blog Post
-            </button>
-          </Link>
-
-          {/* Filter Dropdown */}
-          <select
-            value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value)}
-            className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="title">Search by Title</option>
-            <option value="content">Search by Content</option>
-            <option value="tags">Search by Tags</option>
-            <option value="codeTemplate">Search by Code Template</option>
-          </select>
-
-          {/* Search Bar */}
-          <div className="flex space-x-4">
-            <input
-              type="text"
-              placeholder="Search blog posts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
+  const renderBlogPosts = () => {
+    const postsPerPage = 5; // Define how many posts to show per page
+    const totalPages = Math.ceil(blogPosts.length / postsPerPage);
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+  
+    const paginatedBlogPosts = blogPosts.slice(startIndex, endIndex);
+  
+    const handlePageChange = (page) => {
+      if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+    };
+  
+    return (
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="w-1/4 bg-white p-4 shadow-md">
+          <h2 className="text-lg font-bold mb-4">Blog Posts</h2>
+  
+          {/* Sort by Rating Button */}
+          <div className="mb-4">
             <button
-              onClick={handleSearchBlogpost}
-              className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+              onClick={() => {
+                if (isSorted) {
+                  setIsSorted(false); // Reset to original blog posts
+                } else {
+                  handleSortBlogPosts("rating"); // Fetch and sort by rating
+                }
+              }}
+              className="w-full p-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
             >
-              Search
+              {isSorted ? "Show Default Order" : "Sort by Rating"}
             </button>
           </div>
-        </div>
-
-        {/* Selected Blog Post Details */}
-        {selectedBlogPost ? (
-          <div className="p-4 bg-white shadow rounded">
-            <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              {selectedBlogPost.description}
-            </p>
-            <div className="prose">
-              <p>{selectedBlogPost.content}</p>
-            </div>
-            <div className="mt-4">
-              <span className="text-xs text-gray-500">
-                Created:{" "}
-                {selectedBlogPost.createdAt
-                  ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
-                  : "N/A"}
-              </span>
-              <br />
-              <span className="text-xs text-gray-500">
-                Updated:{" "}
-                {selectedBlogPost.updatedAt
-                  ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
-                  : "N/A"}
-              </span>
-            </div>
-
-            {/* Associated Code Templates Section */}
-            {selectedBlogPost.codeTemplates &&
-              selectedBlogPost.codeTemplates.length > 0 ? (
-              <div className="mt-6">
-                <h4 className="text-lg font-semibold mb-2 text-gray-800">
-                  Associated Code Templates:
-                </h4>
-                <ul className="list-disc pl-6 space-y-1">
-                  {selectedBlogPost.codeTemplates.map((template) => (
-                    <li key={template.id}>
-                      <Link
-                        href={`/codeTemplate/${template.id}`}
-                        className="text-blue-600 text-sm hover:underline"
-                      >
-                        {template.title}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mt-6 text-gray-500">No associated code templates.</p>
-            )}
-
-            {/* Rating Section */}
-            <RateBlogPost postId={selectedBlogPost.id} token={token} />
-
-            {/* Add Comment Section */}
-            <AddComment postId={selectedBlogPost.id} token={token} />
-
-            {/* Comments Section */}
-            <div className="mt-8">
-              <h4 className="text-lg font-bold mb-4">Comments</h4>
-              <div className="flex justify-between items-center mb-4">
-                <p>{selectedBlogPost.comments.length} Comments</p>
-                <button
-                  onClick={handleSortByRating}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  {sortBy === "rating" ? "Sort by Default" : "Sort by Rating"}
-                </button>
-              </div>
-
-              {selectedBlogPost.comments && selectedBlogPost.comments.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedBlogPost.comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="p-4 bg-gray-100 rounded-lg shadow flex flex-col space-y-2"
-                    >
-                      <div className="flex justify-between items-center">
-                        {/* Comment Content */}
-                        <div>
-                          <p>{comment.content}</p>
-                          <p className="text-xs text-gray-500">
-                            By:{" "}
-                            {comment.author
-                              ? `${comment.author.firstname} ${comment.author.lastname}`
-                              : "Unknown"}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Rating:{" "}
-                            {comment.Rating
-                              ? comment.Rating.reduce(
-                                (sum, rating) => sum + rating.value,
-                                0
-                              )
-                              : 0}
-                          </p>
-                        </div>
-
-                        {/* Rate and Reply Buttons */}
-                        <div className="flex items-center space-x-4">
-                          <button
-                            className="flex items-center text-green-500 hover:text-green-700"
-                            onClick={() => handleRateComment(comment.id, 1)}
-                          >
-                            <FaThumbsUp className="mr-1" />
-                          </button>
-                          <button
-                            className="flex items-center text-red-500 hover:text-red-700"
-                            onClick={() => handleRateComment(comment.id, -1)}
-                          >
-                            <FaThumbsDown className="mr-1" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+  
+          {/* Blog Posts List */}
+          <div className="space-y-2">
+            {isSorted && sortedBlogPosts.length > 0 ? (
+              sortedBlogPosts.slice(startIndex, endIndex).map((post) => (
+                <div key={post.id} className="flex justify-between items-center">
+                  <button
+                    role="button"
+                    tabIndex={0}
+                    className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
+                      selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => setSelectedBlogPost(post)}
+                  >
+                    {post.title}
+                  </button>
+                  <p className="text-xs text-gray-400">
+                    Rating:{" "}
+                    {post.ratings
+                      ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
+                      : 0}
+                  </p>
                 </div>
-              ) : (
-                <p className="text-gray-600">No comments yet.</p>
-              )}
+              ))
+            ) : paginatedBlogPosts.length > 0 ? (
+              paginatedBlogPosts.map((post) => (
+                <div key={post.id} className="flex justify-between items-center">
+                  <button
+                    role="button"
+                    tabIndex={0}
+                    className={`w-full text-left p-2 rounded hover:bg-blue-100 ${
+                      selectedBlogPost?.id === post.id ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => setSelectedBlogPost(post)}
+                  >
+                    {post.title}
+                  </button>
+                  <p className="text-xs text-gray-400">
+                    Rating:{" "}
+                    {post.ratings
+                      ? post.ratings.reduce((sum, rating) => sum + rating.value, 0)
+                      : 0}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p>No blog posts available.</p>
+            )}
+          </div>
+  
+          {/* Pagination Controls */}
+          <div className="flex justify-between items-center mt-4">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </aside>
+  
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {/* Search Bar and Create Button */}
+          <div className="flex justify-between mb-6 items-center">
+            {/* Create Blog Post Button */}
+            <Link href="/Createblogposts">
+              <button className="px-4 py-2 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition">
+                + Create Blog Post
+              </button>
+            </Link>
+  
+            {/* Filter Dropdown */}
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="title">Search by Title</option>
+              <option value="content">Search by Content</option>
+              <option value="tags">Search by Tags</option>
+              <option value="codeTemplate">Search by Code Template</option>
+            </select>
+  
+            {/* Search Bar */}
+            <div className="flex space-x-4">
+              <input
+                type="text"
+                placeholder="Search blog posts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 px-3 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+  
+              <button
+                onClick={handleSearchBlogpost}
+                className="h-10 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg shadow-md hover:bg-blue-600 transition"
+              >
+                Search
+              </button>
             </div>
           </div>
-        ) : (
-          <p>Select a blog post from the sidebar.</p>
-        )}
-      </main>
-    </div>
-  );
+  
+          {/* Selected Blog Post Details */}
+          {selectedBlogPost ? (
+            <div className="p-4 bg-white shadow rounded">
+              <h3 className="text-lg font-bold mb-2">{selectedBlogPost.title}</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {selectedBlogPost.description}
+              </p>
+              <div className="prose">
+                <p>{selectedBlogPost.content}</p>
+              </div>
+              <div className="mt-4">
+                <span className="text-xs text-gray-500">
+                  Created:{" "}
+                  {selectedBlogPost.createdAt
+                    ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
+                    : "N/A"}
+                </span>
+                <br />
+                <span className="text-xs text-gray-500">
+                  Updated:{" "}
+                  {selectedBlogPost.updatedAt
+                    ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
+                    : "N/A"}
+                </span>
+              </div>
+  
+              {/* Rating Section */}
+              <RateBlogPost postId={selectedBlogPost.id} token={token} />
+  
+              {/* Add Comment Section */}
+              <AddComment postId={selectedBlogPost.id} token={token} />
+            </div>
+          ) : (
+            <p>Select a blog post from the sidebar.</p>
+          )}
+        </main>
+      </div>
+    );
+  };
+  
+  
 
 
   return (
