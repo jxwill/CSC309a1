@@ -316,3 +316,5 @@ const EmptyCodeTemplatePage = ({ user, token }: template) => {
 };
 
 export default EmptyCodeTemplatePage;
+
+// export default EmptyCodeTemplatePage added for deployment

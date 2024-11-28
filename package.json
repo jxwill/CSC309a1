@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie formidable framer-motion"
+    "postinstall": "npm install bcryptjs jsonwebtoken prisma react-icons @prisma/client cookie formidable framer-motion"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.2",
@@ -29,6 +29,7 @@
     "prisma": "^5.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-icons": "^5.3.0",
     "three": "^0.170.0"
   },
   "devDependencies": {
