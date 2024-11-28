@@ -41,38 +41,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-      <h1 className="text-3xl font-bold mb-6">Login</h1>
-      <form onSubmit={handleLogin} className="w-80 space-y-4">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          className="w-full p-3 border rounded shadow-sm"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          className="w-full p-3 border rounded shadow-sm"
-          required
-        />
-        <button type="submit" className="w-full p-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
-          Login
-        </button>
-        {error && <p className="text-red-500">{error}</p>}
-      </form>
-      <p className="mt-4">
-        Don't have an account?{" "}
-        <Link href="/register" className="text-blue-600 hover:underline">
-          Register here
-        </Link>
-      </p>
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
+      {/* Navigation Bar */}
+      <nav className="w-full p-4 bg-indigo-600 text-white shadow-lg">
+        <div className="flex items-center justify-start max-w-screen-xl mx-auto">
+          <button
+            onClick={() => router.push("/")}
+            className="text-2xl font-bold hover:text-yellow-300 transition"
+          >
+            Scriptorium
+          </button>
+        </div>
+      </nav>
+
+
+      {/* Login Form */}
+      <div className="flex flex-col items-center justify-center flex-1">
+        <h1 className="text-3xl font-bold mb-6">Login</h1>
+        <form onSubmit={handleLogin} className="w-80 space-y-4">
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-3 border rounded shadow-sm"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full p-3 border rounded shadow-sm"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full p-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
+          >
+            Login
+          </button>
+          {error && <p className="text-red-500">{error}</p>}
+        </form>
+        <p className="mt-4">
+          Don't have an account?{" "}
+          <Link href="/register" className="text-blue-600 hover:underline">
+            Register here
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

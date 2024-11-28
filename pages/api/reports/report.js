@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   const { contentId, contentType, reason, additionalInfo, userId } = req.body;
-
+  console.log(8,req.body);
   // Validate required fields
   if (!contentId || !contentType || !reason) {
     return res.status(400).json({ message: 'Missing required fields.' });
@@ -15,17 +15,19 @@ export default async function handler(req, res) {
     const reportData = {
       reason: reason,
       additionalInfo: additionalInfo,
-      userId: userId,
+      userId: parseInt(userId),
     };
 
     // Link report to the correct type of content (BlogPost or Comment)
     if (contentType === 'BlogPost') {
-      reportData.blogPostId = contentId;
+      reportData.blogPostId = parseInt(contentId);
     } else if (contentType === 'Comment') {
-      reportData.commentId = contentId;
+      reportData.commentId = parseInt(contentId);
     } else {
       return res.status(400).json({ message: 'Invalid content type.' });
     }
+
+    console.log(30,reportData);
 
     // Create the report in the database
     const report = await prisma.report.create({ data: reportData });
