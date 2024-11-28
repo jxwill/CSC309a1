@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie formidable framer-motion"
+    "postinstall": "npm install bcryptjs jsonwebtoken prisma @prisma/client cookie formidable framer-motion @codemirror"
   },
   "dependencies": {
     "@codemirror/lang-cpp": "^6.0.2",
@@ -23,7 +23,7 @@
     "codemirror": "^6.0.1",
     "cookie": "^0.5.0",
     "formidable": "^3.5.2",
-    "framer-motion": "^11.11.17",
+    "framer-motion": "^11.12.0",
     "jsonwebtoken": "^9.0.2",
     "next": "^15.0.3",
     "prisma": "^5.22.0",
