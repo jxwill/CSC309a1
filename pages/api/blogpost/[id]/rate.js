@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     if (!id || isNaN(parseInt(id))) {
         return res.status(400).json({ error: 'Invalid or missing blog post ID.' });
     }
+    
 
     // Extract the Authorization header
     const authHeader = req.headers.authorization;
