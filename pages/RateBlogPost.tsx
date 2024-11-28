@@ -129,3 +129,4 @@ const RateBlogPost = ({
 };
 
 export default RateBlogPost;
+

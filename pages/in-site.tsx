@@ -345,6 +345,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     router.push("/");
   };
 
+
   const handleProfileClick = () => {
     if (isVisitor) {
       router.push("/login");
@@ -356,6 +357,32 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const handleMenuToggle = () => {
     setMenuOpen((prev) => !prev);
   };
+
+  const handleSortBlogPosts = async (sortBy) => {
+    try {
+      const response = await fetch(`/api/blogpost/sortBlogPosts?sortBy=${sortBy}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setSortedBlogPosts(data.data); // Store sorted data
+        setIsSorted(true); // Mark as sorted
+      } else {
+        console.error("Failed to fetch sorted blog posts:", data.message);
+        alert(data.message || "Failed to fetch sorted blog posts.");
+      }
+    } catch (error) {
+      console.error("Error sorting blog posts:", error);
+      alert("An error occurred while sorting blog posts.");
+    }
+  };
+
+
+
 
   const renderTabs = () => (
     <div className="flex justify-between items-center mb-8">
@@ -378,29 +405,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     </div>
   );
 
-  const handleSortBlogPosts = async (sortBy) => {
-    try {
-      const response = await fetch(`/api/blogpost/sortBlogPosts?sortBy=${sortBy}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSortedBlogPosts(data.data); // Store sorted data
-        setIsSorted(true); // Mark as sorted
-        setCurrentPage(1); // Reset to the first page
-      } else {
-        console.error("Failed to fetch sorted blog posts:", data.message);
-        alert(data.message || "Failed to fetch sorted blog posts.");
-      }
-    } catch (error) {
-      console.error("Error sorting blog posts:", error);
-      alert("An error occurred while sorting blog posts.");
-    }
-  };
 
 
   const handleRateComment = async (commentId, value) => {
