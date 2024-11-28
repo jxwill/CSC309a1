@@ -120,6 +120,38 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
 
     fetchUserContent();
   }, [user?.id, token]);
+  // Handle delete action for blog post
+  const handleDeleteBlogPost = async (postId: number) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api//blogpost/${postId}/delete`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete the blog post");
+      }
+
+      // Remove the deleted post from the state
+      setBlogPosts(blogPosts.filter((post) => post.id !== postId));
+      alert("Blog post deleted successfully");
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      alert("Failed to delete blog post");
+    }
+  };
+
+  // Handle edit action for blog post
+  const handleEditBlogPost = (postId: number) => {
+    // Redirect to the page with query string containing the postId
+    router.push(`/editBlogPost?id=${postId}`);
+  };
+  
 
 
   return (
@@ -152,6 +184,22 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
                   <p className="text-xs text-gray-500 mt-2">
                     Created: {new Date(post.createdAt).toLocaleDateString()}
                   </p>
+
+                  {/* Edit and Delete buttons */}
+                  <div className="mt-4 flex justify-between">
+                    <button
+                      onClick={() => handleEditBlogPost(post.id)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBlogPost(post.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
