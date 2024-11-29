@@ -1,17 +1,23 @@
 import React, { useState } from "react";
 
-const AddComment = ({ postId, token }) => {
+const AddComment = ({ postId, token, onCommentAdded }) => {
     const [comment, setComment] = useState(""); // Comment input
-    const [isAuthenticated, setIsAuthenticated] = useState(!!token); // Track authentication
+    const [isAuthenticated] = useState(!!token); // Check if the user is authenticated
     const [showWarning, setShowWarning] = useState(false); // Control warning modal visibility
-    const [error, setError] = useState(""); // Error messages
+    const [error, setError] = useState(""); // Error message
+    const [successMessage, setSuccessMessage] = useState(""); // Success message
 
     const handleCommentSubmit = async () => {
+        setError(""); // Clear any existing errors
+        setSuccessMessage(""); // Clear success messages
+
+        // If the user is not authenticated, show the warning modal
         if (!isAuthenticated) {
-            setShowWarning(true); // Show warning if not authenticated
+            setShowWarning(true);
             return;
         }
 
+        // Ensure the comment is not empty
         if (!comment.trim()) {
             setError("Comment cannot be empty.");
             return;
@@ -29,35 +35,45 @@ const AddComment = ({ postId, token }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log("API Response:", data)
-                setComment(""); // Clear input on success
-                setError(""); // Clear any existing error
-                alert("Comment added successfully!");
+                setComment(""); // Clear the comment input
+                setSuccessMessage("Comment added successfully!"); // Set success message
+
+                // Notify the parent about the new comment
+                if (onCommentAdded) {
+                    onCommentAdded(data.comment); // Assuming the API returns the added comment
+                }
             } else {
                 const data = await response.json();
-                setError(data.error || "Failed to add comment.");
+                setError(data.error || "Failed to add comment."); // Handle API errors
             }
         } catch (err) {
             console.error("Error adding comment:", err);
-            setError("An error occurred. Please try again.");
+            setError("An error occurred. Please try again."); // Handle network or server errors
         }
     };
 
     return (
         <div className="mt-6">
+            {/* Comment Input */}
             <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full p-5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
             ></textarea>
 
+            {/* Error Message */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
 
+            {/* Success Message */}
+            {successMessage && <p className="text-green-500 mt-2">{successMessage}</p>}
+
+            {/* Submit Button */}
             <button
                 onClick={handleCommentSubmit}
                 className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
+                disabled={!comment.trim()} // Disable if comment is empty
             >
                 Submit Comment
             </button>
@@ -87,8 +103,6 @@ const AddComment = ({ postId, token }) => {
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 };
