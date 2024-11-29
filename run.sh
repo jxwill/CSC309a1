@@ -3,10 +3,9 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "Starting application..."
+echo "Starting Next.js application..."
 
-# Run the Docker container
-echo "Running Docker container..."
-docker run -p 3000:3000 nextjs-app
+# 1. Start the Next.js server
+npm run start
 
 echo "Application is running on http://localhost:3000"
