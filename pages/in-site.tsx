@@ -10,7 +10,7 @@ import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for
 
 
 interface UserProfile {
-  id:string;
+  id: string;
   firstname: string;
   lastname: string;
   email: string;
@@ -189,20 +189,20 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       setCommentsLoading(false); // Reset loading state
     }
   };
-  
+
 
   const handleSelectBlogPost = (post) => {
     if (!post) {
       console.error("Invalid blog post selection.");
       return;
     }
-  
+
     setSelectedBlogPost(post); // Update the state for the selected blog post
-  
+
     // Optionally fetch comments for the selected blog post
     fetchComments(post.id);
   };
-  
+
   const getAvatarUrl = (user: { avatar?: string; firstname?: string; lastname?: string } | null): string => {
     if (!user || !user.avatar) {
       // Return the default avatar located at /public/picture/xxx.png
@@ -220,78 +220,78 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     setReplyContent,
     handleReport,
   }) => (
-<div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
-<div>
-<p className="text-gray-800">{comment.content}</p>
-{comment.author ? (
-<span className="block text-sm text-gray-500 mt-2">
-<strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
-</span>
-) : (
-<span className="block text-sm text-gray-500 mt-2 italic">
-<strong>By:</strong> Anonymous
-</span>
-)}
-</div>
+    <div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
+      <div>
+        <p className="text-gray-800">{comment.content}</p>
+        {comment.author ? (
+          <span className="block text-sm text-gray-500 mt-2">
+            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+          </span>
+        ) : (
+          <span className="block text-sm text-gray-500 mt-2 italic">
+            <strong>By:</strong> Anonymous
+          </span>
+        )}
+      </div>
 
-<div className="flex space-x-4 mt-4">
-{/* Report Button */}
-<button
-onClick={() => handleReport(comment.id, "Comment")}
-className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
->
-Report Comment
-</button>
+      <div className="flex space-x-4 mt-4">
+        {/* Report Button */}
+        <button
+          onClick={() => handleReport(comment.id, "Comment")}
+          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+        >
+          Report Comment
+        </button>
 
-{/* Reply Button */}
-<button
-onClick={() => onReplyClick(comment.id)}
-className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
->
-Reply
-</button>
-</div>
+        {/* Reply Button */}
+        <button
+          onClick={() => onReplyClick(comment.id)}
+          className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+        >
+          Reply
+        </button>
+      </div>
 
-{/* Reply Form */}
-{replyToCommentId === comment.id && (
-<div className="mt-4">
-<textarea
-className="w-full p-2 border rounded-lg"
-placeholder="Write your reply..."
-value={replyContent}
-onChange={(e) => setReplyContent(e.target.value)}
-></textarea>
-<button
-onClick={() => onSubmitReply(comment.id)}
-className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
->
-Submit Reply
-</button>
-</div>
-)}
+      {/* Reply Form */}
+      {replyToCommentId === comment.id && (
+        <div className="mt-4">
+          <textarea
+            className="w-full p-2 border rounded-lg"
+            placeholder="Write your reply..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+          ></textarea>
+          <button
+            onClick={() => onSubmitReply(comment.id)}
+            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+          >
+            Submit Reply
+          </button>
+        </div>
+      )}
 
-{/* Render Replies */}
-{comment.replies && comment.replies.length > 0 && (
-<div className="mt-4 pl-6 border-l-2 border-gray-200">
-{comment.replies.map((reply) => (
-<CommentItem
- key={reply.id}
- comment={reply}
- onReplyClick={onReplyClick}
- onSubmitReply={onSubmitReply}
- replyToCommentId={replyToCommentId}
- replyContent={replyContent}
- setReplyContent={setReplyContent}
- handleReport={handleReport}
-/>
-))}
-</div>
-)}
-</div>
-);
-  
+      {/* Render Replies */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="mt-4 pl-6 border-l-2 border-gray-200">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              onReplyClick={onReplyClick}
+              onSubmitReply={onSubmitReply}
+              replyToCommentId={replyToCommentId}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              handleReport={handleReport}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
-  
+
+
   const updateCommentsWithReply = (comments, newReply) => {
     if (!comments) return [];
 
@@ -317,18 +317,18 @@ Submit Reply
       alert("Please enter a search query.");
       return;
     }
-  
+
     try {
       const queryParam: Record<string, string> = {};
       if (searchCriteria === "title") queryParam.title = searchQuery;
       if (searchCriteria === "content") queryParam.content = searchQuery;
       if (searchCriteria === "tags") queryParam.tags = searchQuery;
       if (searchCriteria === "codeTemplate") queryParam.codeTemplate = searchQuery;
-  
+
       const queryString = new URLSearchParams(queryParam).toString();
       const response = await fetch(`/api/blogpost?${queryString}`);
       const data = await response.json();
-  
+
       if (response.ok && data.success) {
         console.log("Search Results:", data.data); // Debugging the results
         setSearchResults(data.data);
@@ -403,12 +403,12 @@ Submit Reply
     setMenuOpen((prev) => !prev);
   };
 
-  
 
-  
-  
+
+
+
   const [replyState, setReplyState] = useState({}); // Track which comment/reply has reply form open and the content
-  
+
   const toggleReplyForm = (id) => {
     setReplyState((prevState) => ({
       ...prevState,
@@ -418,7 +418,7 @@ Submit Reply
       },
     }));
   };
-  
+
   const handleReplyChange = (e, id) => {
     setReplyState((prevState) => ({
       ...prevState,
@@ -428,7 +428,7 @@ Submit Reply
       },
     }));
   };
-  
+
   const handleSubmitReply = async (parentCommentId) => {
     if (!replyContent.trim()) {
       alert("Reply content cannot be empty.");
@@ -457,8 +457,8 @@ Submit Reply
               return {
                 ...comment,
                 replies: comment.replies
-                    ? [...comment.replies, reply]
-                    : [reply],
+                  ? [...comment.replies, reply]
+                  : [reply],
               };
             } else if (comment.replies) {
               return {
@@ -471,7 +471,7 @@ Submit Reply
         };
 
         setComments((prevComments) =>
-            addReplyToComments(prevComments, parentCommentId, data.reply)
+          addReplyToComments(prevComments, parentCommentId, data.reply)
         );
       } else {
         alert("Failed to submit reply.");
@@ -495,65 +495,65 @@ Submit Reply
 
   const renderComments = (comments) => {
     return comments.map((comment) => (
-        <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
-          <div>
-            <p className="text-gray-800">{comment.content}</p>
-            {comment.author ? (
-                <span className="block text-sm text-gray-500 mt-2">
-            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
-          </span>
-            ) : (
-                <span className="block text-sm text-gray-500 mt-2 italic">
-            <strong>By:</strong> Anonymous
-          </span>
-            )}
-          </div>
+      <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
+        <div>
+          <p className="text-gray-800">{comment.content}</p>
+          {comment.author ? (
+            <span className="block text-sm text-gray-500 mt-2">
+              <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+            </span>
+          ) : (
+            <span className="block text-sm text-gray-500 mt-2 italic">
+              <strong>By:</strong> Anonymous
+            </span>
+          )}
+        </div>
 
-          <div className="flex space-x-4 mt-4">
-            {/* Report Button */}
+        <div className="flex space-x-4 mt-4">
+          {/* Report Button */}
+          <button
+            onClick={() => handleReport(comment.id, "Comment")}
+            className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+          >
+            Report Comment
+          </button>
+
+          {/* Conditionally render the Reply button only for top-level comments */}
+          {comment.parentCommentId === null && (
             <button
-                onClick={() => handleReport(comment.id, "Comment")}
-                className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+              onClick={() => handleReplyClick(comment.id)}
+              className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
             >
-              Report Comment
+              Reply
             </button>
+          )}
+        </div>
 
-            {/* Conditionally render the Reply button only for top-level comments */}
-            {comment.parentCommentId === null && (
-                <button
-                    onClick={() => handleReplyClick(comment.id)}
-                    className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
-                >
-                  Reply
-                </button>
-            )}
-          </div>
-
-          {/* Render the Reply Form if replyToCommentId matches */}
-          {replyToCommentId === comment.id && (
-              <div className="mt-4 w-full">
-          <textarea
+        {/* Render the Reply Form if replyToCommentId matches */}
+        {replyToCommentId === comment.id && (
+          <div className="mt-4 w-full">
+            <textarea
               className="w-full p-2 border rounded-lg"
               placeholder="Write your reply..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-          ></textarea>
-                <button
-                    onClick={() => handleSubmitReply(comment.id)}
-                    className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
-                >
-                  Submit Reply
-                </button>
-              </div>
-          )}
+            ></textarea>
+            <button
+              onClick={() => handleSubmitReply(comment.id)}
+              className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+            >
+              Submit Reply
+            </button>
+          </div>
+        )}
 
-          {/* Render Replies */}
-          {comment.replies && comment.replies.length > 0 && (
-              <div className="ml-8 mt-4">
-                {renderComments(comment.replies)}
-              </div>
-          )}
-        </div>
+        {/* Render Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="ml-8 mt-4">
+            {renderComments(comment.replies)}
+          </div>
+        )}
+      </div>
     ));
   };
 
@@ -657,7 +657,7 @@ Submit Reply
       alert("You must be logged in to report content.");
       return;
     }
-  
+
     router.push({
       pathname: "/reportpage",
       query: {
@@ -670,14 +670,14 @@ Submit Reply
 
   const handleRateUpdate = (postId, updatedStats) => {
     setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-            post.id === postId
-                ? { ...post, stats: updatedStats } // Update only the rated post's stats
-                : post
-        )
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, stats: updatedStats } // Update only the rated post's stats
+          : post
+      )
     );
   };
-  
+
 
 
   const renderTemplates = () => {
@@ -686,19 +686,19 @@ Submit Reply
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedTemplates = templates.slice(startIndex, endIndex);
-  
+
     const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
-  
+
     // Handle search action
     const handleSearch = () => {
       // Retrieve values from the search input and dropdown
       const searchQuery = searchQueryInput.trim();
       const searchBy = searchByInput;
-  
+
       // Redirect to SearchPage with query parameters
       if (searchQuery) {
         router.push({
@@ -707,31 +707,30 @@ Submit Reply
         });
       }
     };
-  
+
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
         <aside className="w-full md:w-1/4 bg-white p-6 shadow-md rounded-lg mb-4 md:mb-0">
           <h2 className="text-lg font-bold mb-6 text-gray-800">Code Templates</h2>
-  
-          
-  
+
+
+
           <div className="space-y-4">
             {paginatedTemplates.map((template) => (
               <button
                 key={template.id}
-                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
-                  selectedTemplate?.id === template.id
-                    ? "bg-indigo-500 text-white shadow-lg"
-                    : "bg-gray-100 hover:bg-indigo-200"
-                }`}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${selectedTemplate?.id === template.id
+                  ? "bg-indigo-500 text-white shadow-lg"
+                  : "bg-gray-100 hover:bg-indigo-200"
+                  }`}
                 onClick={() => setSelectedTemplate(template)}
               >
                 {template.title}
               </button>
             ))}
           </div>
-  
+
           {/* Pagination Controls */}
           <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full">
             <button
@@ -753,32 +752,31 @@ Submit Reply
             </button>
           </div>
         </aside>
-  
+
         {/* Main Content */}
         <main className="flex-1 p-6">
           {/* Search Input and Dropdown */}
-          <div className="space-y-4 mb-6">
+          <div className="flex items-center space-x-4 mb-6">
             <input
               type="text"
               placeholder="Search query"
               value={searchQueryInput}
               onChange={(e) => setSearchQueryInput(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md shadow-sm"
+              className="flex-1 px-4 py-2 border rounded-md shadow-sm"
             />
             <select
               value={searchByInput}
               onChange={(e) => setSearchByInput(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md shadow-sm"
+              className="flex-none px-4 py-2 border rounded-md shadow-sm"
             >
               <option value="title">Search by Title</option>
-              <option value="description">Search by Description</option>
+              {/* <option value="description">Search by Description</option> */}
               <option value="author">Search by Author</option>
               <option value="tags">Search by Tag</option>
             </select>
-  
             <button
               onClick={handleSearch}
-              className="w-full bg-blue-500 text-white font-bold py-2 rounded-md shadow-md mt-4"
+              className="flex-none bg-blue-500 text-white font-bold py-2 px-6 rounded-md shadow-md"
             >
               Next
             </button>
@@ -814,27 +812,27 @@ Submit Reply
       </div>
     );
   };
-  
-  
-  
-  
+
+
+
+
   const renderBlogPosts = () => {
     const postsPerPage = 5; // Number of posts per page
     const totalPages = Math.ceil(
       (isSorted ? sortedBlogPosts : blogPosts).length / postsPerPage
     );
-  
+
     const paginatedBlogPosts = (isSorted ? sortedBlogPosts : blogPosts).slice(
       (currentPage - 1) * postsPerPage,
       currentPage * postsPerPage
     );
-  
+
     const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
-  
+
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
@@ -845,7 +843,7 @@ Submit Reply
           {/* Sidebar Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-800">Blog Posts</h2>
-    
+
             {/* Close Button for Mobile */}
             <button
               onClick={() => setMenuOpen(false)}
@@ -854,7 +852,7 @@ Submit Reply
               <span className="material-icons">close</span>
             </button>
           </div>
-    
+
           {/* Sort Button */}
           <div className="mb-6">
             <button
@@ -871,17 +869,16 @@ Submit Reply
               {isSorted ? "Show Default Order" : "Sort by Rating"}
             </button>
           </div>
-    
+
           {/* Blog Post List */}
           <div className="space-y-4">
             {paginatedBlogPosts.map((post) => (
               <button
                 key={post.id}
-                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
-                  selectedBlogPost?.id === post.id
-                    ? "bg-indigo-500 text-white shadow-lg"
-                    : "bg-gray-100 hover:bg-indigo-200"
-                }`}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${selectedBlogPost?.id === post.id
+                  ? "bg-indigo-500 text-white shadow-lg"
+                  : "bg-gray-100 hover:bg-indigo-200"
+                  }`}
                 onClick={() => {
                   setSearchResults([]); // Clear search results when clicking a sidebar item
                   handleSelectBlogPost(post); // Handle blog post selection
@@ -891,7 +888,7 @@ Submit Reply
               </button>
             ))}
           </div>
-    
+
           {/* Pagination Controls */}
           <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full max-w-lg mx-auto">
             <button
@@ -913,7 +910,7 @@ Submit Reply
             </button>
           </div>
         </aside>
-    
+
         {/* Main Content */}
         <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
           {/* Search */}
@@ -931,7 +928,7 @@ Submit Reply
                 <option value="codeTemplate">Code Template</option>
               </select>
             </div>
-    
+
             {/* Input for Search Query */}
             <div className="flex-1 min-w-[200px]">
               <input
@@ -995,26 +992,26 @@ Submit Reply
                     ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
                     : "N/A"}
                 </span>
-                
+
               </div>
 
               {/* Rating Section */}
               <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
               <div className="mt-4 flex justify-end">
-                  <button
-                      onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
-                      className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
-                  >
-                    Report Post
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
+                  className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+                >
+                  Report Post
+                </button>
+              </div>
               {/* Add Comment Section */}
               <AddComment
-                      postId={selectedBlogPost.id}
-                      token={token}
-                      onCommentAdded={handleCommentAdded} // Callback for new comments
-                  />
-    
+                postId={selectedBlogPost.id}
+                token={token}
+                onCommentAdded={handleCommentAdded} // Callback for new comments
+              />
+
               {/* Comments Section */}
               <div className="mt-8">
                 <h4 className="text-lg font-bold mb-4">Comments</h4>
@@ -1256,6 +1253,6 @@ Submit Reply
       </footer>
     </div>
   );
-  
+
 }
 
