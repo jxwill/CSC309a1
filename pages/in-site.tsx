@@ -4,7 +4,7 @@ import { GetServerSideProps } from "next";
 import Link from "next/link";
 import RateBlogPost from "./RateBlogPost";
 import AddComment from "./AddComment";
-import RateComment from "pages/rateComments";
+import RateComment from "./rateComments";
 import { useRouter } from "next/router";
 import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for upvote/downvote
 
@@ -508,7 +508,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
             </span>
           )}
         </div>
-
+  
         <div className="flex space-x-4 mt-4">
           {/* Report Button */}
           <button
@@ -517,7 +517,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           >
             Report Comment
           </button>
-
+  
           {/* Conditionally render the Reply button only for top-level comments */}
           {comment.parentCommentId === null && (
             <button
@@ -525,10 +525,17 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
               className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
             >
               Reply
+
             </button>
           )}
         </div>
-
+  
+        {/* Add space between content and rating */}
+      <div className="mt-4">
+        {/* Rate Comment Component */}
+        <RateComment commentId={comment.id} token={token} /> {/* Assuming token is available */}
+      </div>
+  
         {/* Render the Reply Form if replyToCommentId matches */}
         {replyToCommentId === comment.id && (
           <div className="mt-4 w-full">
@@ -546,7 +553,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
             </button>
           </div>
         )}
-
+  
         {/* Render Replies */}
         {comment.replies && comment.replies.length > 0 && (
           <div className="ml-8 mt-4">
@@ -556,6 +563,9 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       </div>
     ));
   };
+
+  
+  
 
   const renderTabs = () => (
     <div className="flex justify-between items-center mb-8">
@@ -615,7 +625,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
 
     try {
-      const response = await fetch(`/api/rate?id=${commentId}`, {
+      const response = await fetch(`/api/comments/rate?id=${commentId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
