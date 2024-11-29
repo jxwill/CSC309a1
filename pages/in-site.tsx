@@ -995,11 +995,19 @@ Submit Reply
                     ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
                     : "N/A"}
                 </span>
+                
               </div>
     
               {/* Rating Section */}
               <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
-    
+              <div className="mt-4 flex justify-end">
+                  <button
+                      onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
+                      className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+                  >
+                    Report Post
+                  </button>
+                </div>
               {/* Add Comment Section */}
               <AddComment
                       postId={selectedBlogPost.id}
