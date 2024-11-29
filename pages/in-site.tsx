@@ -10,7 +10,7 @@ import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for
 
 
 interface UserProfile {
-  id:string;
+  id: string;
   firstname: string;
   lastname: string;
   email: string;
@@ -163,11 +163,11 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       console.error("Blog post ID is required to fetch comments.");
       return;
     }
-  
+
     // Set loading state
     setCommentsLoading(true);
     setCommentsError(null); // Clear any existing errors
-  
+
     try {
       const response = await fetch(`/api/comments/getcomments?blogPostId=${blogPostId}`, {
         method: "GET",
@@ -176,7 +176,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
           Authorization: `Bearer ${token}`, // Include the token for authorization
         },
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         setComments(data); // Set fetched comments
@@ -191,20 +191,20 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       setCommentsLoading(false); // Reset loading state
     }
   };
-  
+
 
   const handleSelectBlogPost = (post) => {
     if (!post) {
       console.error("Invalid blog post selection.");
       return;
     }
-  
+
     setSelectedBlogPost(post); // Update the state for the selected blog post
-  
+
     // Optionally fetch comments for the selected blog post
     fetchComments(post.id);
   };
-  
+
   const getAvatarUrl = (user: { avatar?: string; firstname?: string; lastname?: string } | null): string => {
     if (!user || !user.avatar) {
       // Return the default avatar located at /public/picture/xxx.png
@@ -222,78 +222,78 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     setReplyContent,
     handleReport,
   }) => (
-<div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
-<div>
-<p className="text-gray-800">{comment.content}</p>
-{comment.author ? (
-<span className="block text-sm text-gray-500 mt-2">
-<strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
-</span>
-) : (
-<span className="block text-sm text-gray-500 mt-2 italic">
-<strong>By:</strong> Anonymous
-</span>
-)}
-</div>
+    <div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
+      <div>
+        <p className="text-gray-800">{comment.content}</p>
+        {comment.author ? (
+          <span className="block text-sm text-gray-500 mt-2">
+            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+          </span>
+        ) : (
+          <span className="block text-sm text-gray-500 mt-2 italic">
+            <strong>By:</strong> Anonymous
+          </span>
+        )}
+      </div>
 
-<div className="flex space-x-4 mt-4">
-{/* Report Button */}
-<button
-onClick={() => handleReport(comment.id, "Comment")}
-className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
->
-Report Comment
-</button>
+      <div className="flex space-x-4 mt-4">
+        {/* Report Button */}
+        <button
+          onClick={() => handleReport(comment.id, "Comment")}
+          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+        >
+          Report Comment
+        </button>
 
-{/* Reply Button */}
-<button
-onClick={() => onReplyClick(comment.id)}
-className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
->
-Reply
-</button>
-</div>
+        {/* Reply Button */}
+        <button
+          onClick={() => onReplyClick(comment.id)}
+          className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+        >
+          Reply
+        </button>
+      </div>
 
-{/* Reply Form */}
-{replyToCommentId === comment.id && (
-<div className="mt-4">
-<textarea
-className="w-full p-2 border rounded-lg"
-placeholder="Write your reply..."
-value={replyContent}
-onChange={(e) => setReplyContent(e.target.value)}
-></textarea>
-<button
-onClick={() => onSubmitReply(comment.id)}
-className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
->
-Submit Reply
-</button>
-</div>
-)}
+      {/* Reply Form */}
+      {replyToCommentId === comment.id && (
+        <div className="mt-4">
+          <textarea
+            className="w-full p-2 border rounded-lg"
+            placeholder="Write your reply..."
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+          ></textarea>
+          <button
+            onClick={() => onSubmitReply(comment.id)}
+            className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+          >
+            Submit Reply
+          </button>
+        </div>
+      )}
 
-{/* Render Replies */}
-{comment.replies && comment.replies.length > 0 && (
-<div className="mt-4 pl-6 border-l-2 border-gray-200">
-{comment.replies.map((reply) => (
-<CommentItem
- key={reply.id}
- comment={reply}
- onReplyClick={onReplyClick}
- onSubmitReply={onSubmitReply}
- replyToCommentId={replyToCommentId}
- replyContent={replyContent}
- setReplyContent={setReplyContent}
- handleReport={handleReport}
-/>
-))}
-</div>
-)}
-</div>
-);
-  
+      {/* Render Replies */}
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="mt-4 pl-6 border-l-2 border-gray-200">
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              onReplyClick={onReplyClick}
+              onSubmitReply={onSubmitReply}
+              replyToCommentId={replyToCommentId}
+              replyContent={replyContent}
+              setReplyContent={setReplyContent}
+              handleReport={handleReport}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
-  
+
+
   const updateCommentsWithReply = (comments, newReply) => {
     if (!comments) return [];
 
@@ -319,18 +319,18 @@ Submit Reply
       alert("Please enter a search query.");
       return;
     }
-  
+
     try {
       const queryParam: Record<string, string> = {};
       if (searchCriteria === "title") queryParam.title = searchQuery;
       if (searchCriteria === "content") queryParam.content = searchQuery;
       if (searchCriteria === "tags") queryParam.tags = searchQuery;
       if (searchCriteria === "codeTemplate") queryParam.codeTemplate = searchQuery;
-  
+
       const queryString = new URLSearchParams(queryParam).toString();
       const response = await fetch(`/api/blogpost?${queryString}`);
       const data = await response.json();
-  
+
       if (response.ok && data.success) {
         console.log("Search Results:", data.data); // Debugging the results
         setSearchResults(data.data);
@@ -405,12 +405,12 @@ Submit Reply
     setMenuOpen((prev) => !prev);
   };
 
-  
 
-  
-  
+
+
+
   const [replyState, setReplyState] = useState({}); // Track which comment/reply has reply form open and the content
-  
+
   const toggleReplyForm = (id) => {
     setReplyState((prevState) => ({
       ...prevState,
@@ -420,7 +420,7 @@ Submit Reply
       },
     }));
   };
-  
+
   const handleReplyChange = (e, id) => {
     setReplyState((prevState) => ({
       ...prevState,
@@ -430,7 +430,7 @@ Submit Reply
       },
     }));
   };
-  
+
   const handleSubmitReply = async (parentCommentId) => {
     if (!replyContent.trim()) {
       alert("Reply content cannot be empty.");
@@ -459,8 +459,8 @@ Submit Reply
               return {
                 ...comment,
                 replies: comment.replies
-                    ? [...comment.replies, reply]
-                    : [reply],
+                  ? [...comment.replies, reply]
+                  : [reply],
               };
             } else if (comment.replies) {
               return {
@@ -473,7 +473,7 @@ Submit Reply
         };
 
         setComments((prevComments) =>
-            addReplyToComments(prevComments, parentCommentId, data.reply)
+          addReplyToComments(prevComments, parentCommentId, data.reply)
         );
       } else {
         alert("Failed to submit reply.");
@@ -493,65 +493,65 @@ Submit Reply
 
   const renderComments = (comments) => {
     return comments.map((comment) => (
-        <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
-          <div>
-            <p className="text-gray-800">{comment.content}</p>
-            {comment.author ? (
-                <span className="block text-sm text-gray-500 mt-2">
-            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
-          </span>
-            ) : (
-                <span className="block text-sm text-gray-500 mt-2 italic">
-            <strong>By:</strong> Anonymous
-          </span>
-            )}
-          </div>
+      <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
+        <div>
+          <p className="text-gray-800">{comment.content}</p>
+          {comment.author ? (
+            <span className="block text-sm text-gray-500 mt-2">
+              <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+            </span>
+          ) : (
+            <span className="block text-sm text-gray-500 mt-2 italic">
+              <strong>By:</strong> Anonymous
+            </span>
+          )}
+        </div>
 
-          <div className="flex space-x-4 mt-4">
-            {/* Report Button */}
+        <div className="flex space-x-4 mt-4">
+          {/* Report Button */}
+          <button
+            onClick={() => handleReport(comment.id, "Comment")}
+            className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+          >
+            Report Comment
+          </button>
+
+          {/* Conditionally render the Reply button only for top-level comments */}
+          {comment.parentCommentId === null && (
             <button
-                onClick={() => handleReport(comment.id, "Comment")}
-                className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+              onClick={() => handleReplyClick(comment.id)}
+              className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
             >
-              Report Comment
+              Reply
             </button>
+          )}
+        </div>
 
-            {/* Conditionally render the Reply button only for top-level comments */}
-            {comment.parentCommentId === null && (
-                <button
-                    onClick={() => handleReplyClick(comment.id)}
-                    className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
-                >
-                  Reply
-                </button>
-            )}
-          </div>
-
-          {/* Render the Reply Form if replyToCommentId matches */}
-          {replyToCommentId === comment.id && (
-              <div className="mt-4 w-full">
-          <textarea
+        {/* Render the Reply Form if replyToCommentId matches */}
+        {replyToCommentId === comment.id && (
+          <div className="mt-4 w-full">
+            <textarea
               className="w-full p-2 border rounded-lg"
               placeholder="Write your reply..."
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
-          ></textarea>
-                <button
-                    onClick={() => handleSubmitReply(comment.id)}
-                    className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
-                >
-                  Submit Reply
-                </button>
-              </div>
-          )}
+            ></textarea>
+            <button
+              onClick={() => handleSubmitReply(comment.id)}
+              className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+            >
+              Submit Reply
+            </button>
+          </div>
+        )}
 
-          {/* Render Replies */}
-          {comment.replies && comment.replies.length > 0 && (
-              <div className="ml-8 mt-4">
-                {renderComments(comment.replies)}
-              </div>
-          )}
-        </div>
+        {/* Render Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="ml-8 mt-4">
+            {renderComments(comment.replies)}
+          </div>
+        )}
+      </div>
     ));
   };
 
@@ -655,7 +655,7 @@ Submit Reply
       alert("You must be logged in to report content.");
       return;
     }
-  
+
     router.push({
       pathname: "/reportpage",
       query: {
@@ -668,14 +668,14 @@ Submit Reply
 
   const handleRateUpdate = (postId, updatedStats) => {
     setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-            post.id === postId
-                ? { ...post, stats: updatedStats } // Update only the rated post's stats
-                : post
-        )
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, stats: updatedStats } // Update only the rated post's stats
+          : post
+      )
     );
   };
-  
+
 
 
   const renderTemplates = () => {
@@ -684,19 +684,19 @@ Submit Reply
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedTemplates = templates.slice(startIndex, endIndex);
-  
+
     const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
-  
+
     // Handle search action
     const handleSearch = () => {
       // Retrieve values from the search input and dropdown
       const searchQuery = searchQueryInput.trim();
       const searchBy = searchByInput;
-  
+
       // Redirect to SearchPage with query parameters
       if (searchQuery) {
         router.push({
@@ -705,31 +705,30 @@ Submit Reply
         });
       }
     };
-  
+
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
         <aside className="w-full md:w-1/4 bg-white p-6 shadow-md rounded-lg mb-4 md:mb-0">
           <h2 className="text-lg font-bold mb-6 text-gray-800">Code Templates</h2>
-  
-          
-  
+
+
+
           <div className="space-y-4">
             {paginatedTemplates.map((template) => (
               <button
                 key={template.id}
-                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
-                  selectedTemplate?.id === template.id
-                    ? "bg-indigo-500 text-white shadow-lg"
-                    : "bg-gray-100 hover:bg-indigo-200"
-                }`}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${selectedTemplate?.id === template.id
+                  ? "bg-indigo-500 text-white shadow-lg"
+                  : "bg-gray-100 hover:bg-indigo-200"
+                  }`}
                 onClick={() => setSelectedTemplate(template)}
               >
                 {template.title}
               </button>
             ))}
           </div>
-  
+
           {/* Pagination Controls */}
           <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full">
             <button
@@ -751,7 +750,7 @@ Submit Reply
             </button>
           </div>
         </aside>
-  
+
         {/* Main Content */}
         <main className="flex-1 p-6">
           {/* Search Input and Dropdown */}
@@ -773,7 +772,7 @@ Submit Reply
               <option value="author">Search by Author</option>
               <option value="tags">Search by Tag</option>
             </select>
-  
+
             <button
               onClick={handleSearch}
               className="w-full bg-blue-500 text-white font-bold py-2 rounded-md shadow-md mt-4"
@@ -812,27 +811,27 @@ Submit Reply
       </div>
     );
   };
-  
-  
-  
-  
+
+
+
+
   const renderBlogPosts = () => {
     const postsPerPage = 5; // Number of posts per page
     const totalPages = Math.ceil(
       (isSorted ? sortedBlogPosts : blogPosts).length / postsPerPage
     );
-  
+
     const paginatedBlogPosts = (isSorted ? sortedBlogPosts : blogPosts).slice(
       (currentPage - 1) * postsPerPage,
       currentPage * postsPerPage
     );
-  
+
     const handlePageChange = (page) => {
       if (page >= 1 && page <= totalPages) {
         setCurrentPage(page);
       }
     };
-  
+
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
@@ -843,7 +842,7 @@ Submit Reply
           {/* Sidebar Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-800">Blog Posts</h2>
-    
+
             {/* Close Button for Mobile */}
             <button
               onClick={() => setMenuOpen(false)}
@@ -852,7 +851,7 @@ Submit Reply
               <span className="material-icons">close</span>
             </button>
           </div>
-    
+
           {/* Sort Button */}
           <div className="mb-6">
             <button
@@ -869,17 +868,16 @@ Submit Reply
               {isSorted ? "Show Default Order" : "Sort by Rating"}
             </button>
           </div>
-    
+
           {/* Blog Post List */}
           <div className="space-y-4">
             {paginatedBlogPosts.map((post) => (
               <button
                 key={post.id}
-                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
-                  selectedBlogPost?.id === post.id
-                    ? "bg-indigo-500 text-white shadow-lg"
-                    : "bg-gray-100 hover:bg-indigo-200"
-                }`}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${selectedBlogPost?.id === post.id
+                  ? "bg-indigo-500 text-white shadow-lg"
+                  : "bg-gray-100 hover:bg-indigo-200"
+                  }`}
                 onClick={() => {
                   setSearchResults([]); // Clear search results when clicking a sidebar item
                   handleSelectBlogPost(post); // Handle blog post selection
@@ -889,7 +887,7 @@ Submit Reply
               </button>
             ))}
           </div>
-    
+
           {/* Pagination Controls */}
           <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full max-w-lg mx-auto">
             <button
@@ -911,7 +909,7 @@ Submit Reply
             </button>
           </div>
         </aside>
-    
+
         {/* Main Content */}
         <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
           {/* Search */}
@@ -929,7 +927,7 @@ Submit Reply
                 <option value="codeTemplate">Code Template</option>
               </select>
             </div>
-    
+
             {/* Input for Search Query */}
             <div className="flex-1 min-w-[200px]">
               <input
@@ -940,7 +938,7 @@ Submit Reply
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-    
+
             {/* Search Button */}
             <button
               onClick={handleSearch}
@@ -949,7 +947,7 @@ Submit Reply
               Search
             </button>
           </div>
-    
+
           {/* Display Search Results or Selected Blog Post */}
           {searchResults.length > 0 ? (
             <div>
@@ -994,13 +992,13 @@ Submit Reply
                     : "N/A"}
                 </span>
               </div>
-    
+
               {/* Rating Section */}
               <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
-    
+
               {/* Add Comment Section */}
               <AddComment postId={selectedBlogPost.id} token={token} />
-    
+
               {/* Comments Section */}
               <div className="mt-8">
                 <h4 className="text-lg font-bold mb-4">Comments</h4>
@@ -1027,35 +1025,36 @@ Submit Reply
         </main>
       </div>
     );
-    
+
     // The return statement should be the last part of your component.
-    
+
   };
-  
 
 
 
-  
-  
-  
-  
-  
+
+
+
+
+
+
 
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100">
       {/* Navbar */}
-      <nav className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 via-purple-500 to-indigo-600 text-white shadow-lg fixed top-0 z-20">
+      <nav className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-indigo-700 via-purple-600 to-pink-500 text-white shadow-lg fixed top-0 z-20">
         {/* Logo */}
         <Link
           href="/logout"
           className="text-2xl font-bold hover:text-yellow-300 transition flex items-center space-x-2"
         >
-          <span className="material-icons">Dashboard Scriptorium</span>
+          <span className="material-icons">dashboard</span>
+          <span className="hidden sm:block">Scriptorium</span>
         </Link>
 
         {/* Hamburger Menu for Mobile */}
-        <div className="md:hidden flex items-center">
+        <div className="md:hidden flex items-center relative">
           <button
             onClick={handleMenuToggle}
             className="text-white hover:text-yellow-300 transition"
@@ -1077,18 +1076,17 @@ Submit Reply
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div className="absolute top-16 right-4 w-56 bg-white text-black rounded-lg shadow-lg border border-gray-200 z-30">
+            <div className="absolute top-16 right-0 w-64 bg-white text-gray-800 rounded-lg shadow-xl border border-gray-200 z-30">
               <ul className="divide-y divide-gray-200">
                 {/* Tab Switcher */}
                 <li>
                   <button
                     onClick={() => {
-                      setActiveTab('templates');
+                      setActiveTab("templates");
                       setMenuOpen(false);
                     }}
-                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                      activeTab === 'templates' ? 'font-bold' : ''
-                    }`}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${activeTab === "templates" ? "font-bold text-indigo-500" : ""
+                      }`}
                   >
                     Code Templates
                   </button>
@@ -1096,18 +1094,17 @@ Submit Reply
                 <li>
                   <button
                     onClick={() => {
-                      setActiveTab('blogposts');
+                      setActiveTab("blogposts");
                       setMenuOpen(false);
                     }}
-                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                      activeTab === 'blogposts' ? 'font-bold' : ''
-                    }`}
+                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${activeTab === "blogposts" ? "font-bold text-indigo-500" : ""
+                      }`}
                   >
                     Blog Posts
                   </button>
                 </li>
 
-                {/* Add Buttons for Create New Template/Blog Post */}
+                {/* Create New Buttons */}
                 {activeTab === "templates" && (
                   <li>
                     <Link href="/codeTemplate/createNew">
@@ -1151,53 +1148,54 @@ Submit Reply
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-6">
-          {/* Avatar */}
-          
           <button
             onClick={handleProfileClick}
-            className="px-4 py-2 bg-white text-blue-600 rounded-full shadow-lg hover:bg-blue-700 hover:text-white transition flex items-center space-x-2"
+            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-lg hover:from-purple-700 hover:to-pink-700 transition flex items-center space-x-2"
           >
-            <span className="material-icons">Profile</span>
+            <span className="material-icons">person</span>
+            <span>Profile</span>
           </button>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition flex items-center space-x-2"
+            className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full shadow-lg hover:from-red-700 hover:to-pink-700 transition flex items-center space-x-2"
           >
-            <span className="material-icons">Logout</span>
+            <span className="material-icons">logout</span>
+            <span>Logout</span>
           </button>
 
+          {/* User Avatar */}
           <div className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-lg cursor-pointer">
-          <img
-            src={getAvatarUrl(user)}
-            alt="User Avatar"
-            className="w-full h-full object-cover"
-          />
-        </div>
+            <img
+              src={getAvatarUrl(user)}
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+            />
+            <span className="absolute inset-0 rounded-full border-2 border-purple-500"></span>
+          </div>
         </div>
       </nav>
 
-  
+
       {/* Main Content */}
       <div className="pt-20 px-8 flex flex-1">
         {/* Sidebar */}
-        <aside className="w-1/4 bg-white p-6 shadow-lg rounded-lg hidden md:block">
+        <aside className="w-1/5 bg-white p-6 shadow-lg rounded-lg hidden md:block">
           <h2 className="text-lg font-semibold mb-6 text-gray-800">Navigation</h2>
           <div className="space-y-4">
             {['templates', 'blogposts'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`block w-full text-left px-4 py-2 rounded-lg transition duration-300 ${
-                  activeTab === tab
-                    ? 'bg-indigo-500 text-white shadow-lg'
-                    : 'bg-gray-100 hover:bg-indigo-200'
-                }`}
+                className={`block w-full text-left px-4 py-2 rounded-lg transition duration-300 ${activeTab === tab
+                  ? 'bg-indigo-500 text-white shadow-lg'
+                  : 'bg-gray-100 hover:bg-indigo-200'
+                  }`}
               >
                 {tab === 'templates' ? 'Templates' : 'Blog Posts'}
               </button>
             ))}
           </div>
-  
+
           {/* Add Buttons */}
           {activeTab === "templates" && (
             <div className="mt-6">
@@ -1218,7 +1216,7 @@ Submit Reply
             </div>
           )}
         </aside>
-  
+
         {/* Main Content */}
         <main className="flex-1 p-6">
           <div className="mb-8">
@@ -1235,15 +1233,15 @@ Submit Reply
           {activeTab === 'blogposts' && renderBlogPosts()}
         </main>
       </div>
-  
+
       {/* Footer */}
       <footer className="w-full py-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-center shadow-inner mt-6">
         <p className="font-medium">
           Designed with ❤️ by Jianxin Liu, Eric Qi Li, Ximei Lin
         </p>
       </footer>
-    </div>
+    </div >
   );
-  
+
 }
 
