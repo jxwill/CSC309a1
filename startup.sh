@@ -1,21 +1,20 @@
 #!/bin/bash
 
-# Exit immediately if a command exits with a non-zero status
-set -e
-
-echo "Starting environment setup..."
-
-# Install npm dependencies
+# Step 1: Install dependencies using npm
 echo "Installing npm dependencies..."
 npm install
 
-# Build the Docker image
+# Step 2: Set up Docker image (build the Docker image)
 echo "Building Docker image..."
-docker build -t my-app .
+docker-compose build
 
-# Set up containers (if needed with Docker Compose)
-echo "Setting up Docker containers..."
-docker-compose up -d
+# Step 3: Run any migrations (if you're using Prisma)
+# Example: Prisma migrations
+echo "Running Prisma migrations..."
+npx prisma migrate deploy
 
-echo "Environment setup complete."
+# Any other setup steps you might have can go here...
+
+echo "Setup completed!"
+
 
