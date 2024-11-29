@@ -923,129 +923,128 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
         {/* Main Content */}
         <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
-          {/* Search */}
-          <div className="mb-6 flex flex-wrap md:flex-nowrap items-center gap-4">
-            {/* Dropdown for Search Criteria */}
-            <div className="flex-1 min-w-[150px]">
-              <select
-                value={searchCriteria}
-                onChange={(e) => setSearchCriteria(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="title">Title</option>
-                <option value="content">Content</option>
-                <option value="tags">Tags</option>
-                <option value="codeTemplate">Code Template</option>
-              </select>
-            </div>
+  {/* Search */}
+  <div className="mb-6 flex flex-wrap md:flex-nowrap items-center gap-4">
+    {/* Dropdown for Search Criteria */}
+    <div className="flex-1 min-w-[150px]">
+      <select
+        value={searchCriteria}
+        onChange={(e) => setSearchCriteria(e.target.value)}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        <option value="title">Title</option>
+        <option value="content">Content</option>
+        <option value="tags">Tags</option>
+        <option value="codeTemplate">Code Template</option>
+      </select>
+    </div>
 
-            {/* Input for Search Query */}
-            <div className="flex-1 min-w-[200px]">
-              <input
-                type="text"
-                placeholder={`Search by ${searchCriteria}`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+    {/* Input for Search Query */}
+    <div className="flex-1 min-w-[200px]">
+      <input
+        type="text"
+        placeholder={`Search by ${searchCriteria}`}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+    </div>
 
-            {/* Search Button */}
-            <button
-              onClick={handleSearch}
-              className="w-full md:w-auto px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-all"
-            >
-              Search
-            </button>
+    {/* Search Button */}
+    <button
+      onClick={handleSearch}
+      className="w-full md:w-auto px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-all"
+    >
+      Search
+    </button>
+  </div>
+
+  {/* Display Search Results or Selected Blog Post */}
+  {searchResults.length > 0 ? (
+    <div>
+      <h3 className="text-xl font-bold mb-4">Search Results</h3>
+      <div className="space-y-4">
+        {searchResults.map((result) => (
+          <div
+            key={result.id}
+            className="p-4 bg-white shadow-md rounded-lg cursor-pointer hover:shadow-lg transition"
+            onClick={() => {
+              handleSelectBlogPost(result);
+              setSearchResults([]); // Clear search results when selecting a post
+              setSearchQuery(""); // Clear the search input
+            }}
+          >
+            <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
+            <p className="text-sm text-gray-600">{result.description}</p>
           </div>
+        ))}
+      </div>
+    </div>
+  ) : selectedBlogPost ? (
+    <div className="p-6 bg-white shadow-lg rounded-lg">
+      <h3 className="text-2xl font-bold mb-4 text-gray-800">
+        {selectedBlogPost.title}
+      </h3>
+      <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
+      <div className="prose max-w-none">
+        <p>{selectedBlogPost.content}</p>
+      </div>
+      <div className="mt-6">
+        <span className="block text-sm text-gray-500">
+          <strong>Created:</strong>{" "}
+          {selectedBlogPost.createdAt
+            ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
+            : "N/A"}
+        </span>
+        <span className="block text-sm text-gray-500">
+          <strong>Updated:</strong>{" "}
+          {selectedBlogPost.updatedAt
+            ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
+            : "N/A"}
+        </span>
+      </div>
 
-          {/* Display Search Results or Selected Blog Post */}
-          {searchResults.length > 0 ? (
-            <div>
-              <h3 className="text-xl font-bold mb-4">Search Results</h3>
-              <div className="space-y-4">
-                {searchResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="p-4 bg-white shadow-md rounded-lg cursor-pointer hover:shadow-lg transition"
-                    onClick={() => {
-                      handleSelectBlogPost(result);
-                      setSearchResults([]); // Clear search results when selecting a post
-                      setSearchQuery(""); // Clear the search input
-                    }}
-                  >
-                    <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
-                    <p className="text-sm text-gray-600">{result.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : selectedBlogPost ? (
-            <div className="p-6 bg-white shadow-lg rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800">
-                {selectedBlogPost.title}
-              </h3>
-              <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
-              <div className="prose max-w-none">
-                <p>{selectedBlogPost.content}</p>
-              </div>
-              <div className="mt-6">
-                <span className="block text-sm text-gray-500">
-                  <strong>Created:</strong>{" "}
-                  {selectedBlogPost.createdAt
-                    ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
-                    : "N/A"}
-                </span>
-                <span className="block text-sm text-gray-500">
-                  <strong>Updated:</strong>{" "}
-                  {selectedBlogPost.updatedAt
-                    ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
-                    : "N/A"}
-                </span>
+      {/* Rating Section */}
+      <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
+          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+        >
+          Report Post
+        </button>
+      </div>
+      {/* Add Comment Section */}
+      <AddComment
+        postId={selectedBlogPost.id}
+        token={token}
+        onCommentAdded={handleCommentAdded} // Callback for new comments
+      />
 
-              </div>
-
-              {/* Rating Section */}
-              <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
-                  className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
-                >
-                  Report Post
-                </button>
-              </div>
-              {/* Add Comment Section */}
-              <AddComment
-                postId={selectedBlogPost.id}
-                token={token}
-                onCommentAdded={handleCommentAdded} // Callback for new comments
-              />
-
-              {/* Comments Section */}
-              <div className="mt-8">
-                <h4 className="text-lg font-bold mb-4">Comments</h4>
-                {commentsLoading ? (
-                  <p className="text-gray-500">Loading comments...</p>
-                ) : commentsError ? (
-                  <p className="text-red-500">Error: {commentsError}</p>
-                ) : topLevelComments.length > 0 ? (
-                  <div className="space-y-4">
-                    {renderComments(topLevelComments)}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No comments yet.</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Select a post to view details.
-              </h3>
-            </div>
-          )}
-        </main>
+      {/* Comments Section */}
+      <div className="mt-8">
+        <h4 className="text-lg font-bold mb-4">Comments</h4>
+        {commentsLoading ? (
+          <p className="text-gray-500">Loading comments...</p>
+        ) : commentsError ? (
+          <p className="text-red-500">Error: {commentsError}</p>
+        ) : topLevelComments.length > 0 ? (
+          <div className="space-y-4">
+            {renderComments(topLevelComments)}
+          </div>
+        ) : (
+          <p className="text-gray-500">No comments yet.</p>
+        )}
+      </div>
+    </div>
+  ) : (
+    <div className="text-center">
+      <h3 className="text-lg font-semibold text-gray-800">
+        Select a post to view details.
+      </h3>
+    </div>
+  )}
+</main>
       </div>
     );
 
