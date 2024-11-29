@@ -371,6 +371,23 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                     transform: scale(1.1); /* Slightly larger */
                                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow becomes more pronounced */
                                 }
+
+                                .delete-button {
+                                    padding: 10px 20px;
+                                    background-color: #E85E5E; /* Vibrant red for a negative action */
+                                    color: #fff;
+                                    border: none;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    transition: transform 0.2s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+                                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+                                }
+
+                                .delete-button:hover {
+                                    background-color: #D14848; /* Darker red for hover */
+                                    transform: scale(1.1); /* Slightly larger */
+                                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow becomes more pronounced */
+                                }
                             `}</style>
 
                             <button
@@ -405,6 +422,11 @@ const CodeTemplatePage = ({ user, token }: template) => {
                             <button
                                 onClick={async () => {
                                     try {
+                                        if (!user) {
+                                            alert('You must be logged in to fork a code template.');
+                                            router.push('/login');
+                                            return;
+                                        }
                                         const response = await fetch(`/api/codeTemplate/fork`, {
                                             method: 'POST',
                                             headers: {
@@ -456,6 +478,7 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                         // const token = localStorage.getItem('token'); // Assuming the JWT is stored in localStorage
                                         if (!token) {
                                             alert('You must be logged in to save templates.');
+                                            router.push('/login');
                                             return;
                                         }
 
@@ -508,6 +531,48 @@ const CodeTemplatePage = ({ user, token }: template) => {
                                 className="save-button"
                             >
                                 Save
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        // Prepare the data to be sent
+                                        // const token = localStorage.getItem('token'); // Assuming the JWT is stored in localStorage
+                                        if (!token) {
+                                            alert('You must be logged in to delete templates.');
+                                            router.push('/login');
+                                            return;
+                                        }
+                                        else if (codeTemplate.authorId !== user.id) {
+                                            alert('You must be the author of the template to delete it.');
+                                            return;
+                                        }
+
+
+                                        const response = await fetch(`/api/codeTemplate/delete?id=${codeTemplate.id}`, {
+                                            method: 'DELETE',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                Authorization: `Bearer ${token}`, // Pass the token for authentication
+                                            },
+                                        })
+
+                                        if (!response.ok) {
+                                            // Handle error responses
+                                            console.error('Deleting failed with an unknown error.');
+                                        }
+                                        else {
+                                            // Successfully deleted
+                                            alert('Template deleted successfully!');
+                                            router.push('/in-site');
+                                        }
+                                    } catch (error) {
+                                        console.error('Error saving template:', error);
+                                        alert('An error occurred while saving the template.');
+                                    }
+                                }}
+                                className="delete-button"
+                            >
+                                Delete
                             </button>
                         </div>
                     </div>
