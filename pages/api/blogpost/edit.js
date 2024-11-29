@@ -1,10 +1,9 @@
 import prisma from "utils/db";
-import { verifyToken } from "utils/middleware";
-
+import { verifyToken } from "utils/auth";
 
 export default async function handler(req, res) {
-    if (req.method !== 'DELETE') {
-        res.setHeader('Allow', ['DELETE']);
+    if (req.method !== 'PUT') {
+        res.setHeader('Allow', ['PUT']);
         return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 
@@ -20,31 +19,33 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Unauthorized: Invalid or expired token' });
     }
 
-    // Extract the blog post ID from the query parameters
-    const { id } = req.query;
+    // Extract the blog post ID and updated fields from the request body
+    const { id, title, description, content, tags } = req.body;
 
-    if (!id) {
-        return res.status(400).json({ error: 'Blog post ID is required' });
+    // Validate required fields
+    if (!id || !title || !description || !content) {
+        return res.status(400).json({ error: 'All fields (id, title, description, content, tags) are required' });
     }
 
     try {
-        // Check if the blog post exists and if the user is authorized to delete it
+        // Check if the blog post exists and if the user is authorized to edit it
         const blogPost = await prisma.blogPost.findUnique({
             where: { id: parseInt(id) },
         });
 
         if (!blogPost || blogPost.userId !== tokenPayload.id) {
-            return res.status(403).json({ error: 'Forbidden: You do not have permission to delete this blog post' });
+            return res.status(403).json({ error: 'Forbidden: You do not have permission to edit this blog post' });
         }
 
-        // Delete the blog post
-        await prisma.blogPost.delete({
+        // Update the blog post
+        const updatedBlogPost = await prisma.blogPost.update({
             where: { id: parseInt(id) },
+            data: { title, description, content, tags },
         });
 
-        res.status(200).json({ success: true, message: 'Blog post deleted successfully' });
+        res.status(200).json({ success: true, data: updatedBlogPost });
     } catch (error) {
-        console.error('Error deleting blog post:', error);
-        res.status(500).json({ error: 'Failed to delete this blog post' });
+        console.error('Error updating blog post:', error);
+        res.status(500).json({ error: 'Failed to update blog post' });
     }
 }

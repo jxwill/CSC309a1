@@ -129,15 +129,13 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
   // Handle delete action for blog post
   const handleDeleteBlogPost = async (postId: number) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api//blogpost/${postId}/delete`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/blogpost/${postId}/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Failed to delete the blog post");
