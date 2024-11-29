@@ -159,34 +159,32 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
 
 
   const fetchComments = async (blogPostId) => {
+    console.log("Fetching comments for BlogPost ID:", blogPostId);
     if (!blogPostId) {
       console.error("Blog post ID is required to fetch comments.");
       return;
     }
-  
-    // Set loading state
-    setCommentsLoading(true);
-    setCommentsError(null); // Clear any existing errors
-  
+
     try {
       const response = await fetch(`/api/comments/getcomments?blogPostId=${blogPostId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Include the token for authorization
         },
       });
-  
+      console.log("API Response:", response);
+
+
       if (response.ok) {
         const data = await response.json();
-        setComments(data); // Set fetched comments
+        setComments(data.comments || []); // Ensure we safely set comments
       } else {
         const errorData = await response.json();
-        setCommentsError(errorData.error || "Failed to fetch comments."); // Set error if the response is not OK
+        setCommentsError(errorData.error || "Failed to fetch comments.");
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
-      setCommentsError("An error occurred while fetching comments."); // Handle fetch errors
+      setCommentsError("An error occurred while fetching comments.");
     } finally {
       setCommentsLoading(false); // Reset loading state
     }
@@ -482,6 +480,10 @@ Submit Reply
       console.error("Error submitting reply:", error);
       alert("An error occurred. Please try again.");
     }
+  };
+
+  const handleCommentAdded = (newComment) => {
+    setComments((prevComments) => [...prevComments, newComment]);
   };
 
 
@@ -999,7 +1001,11 @@ Submit Reply
               <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
     
               {/* Add Comment Section */}
-              <AddComment postId={selectedBlogPost.id} token={token} />
+              <AddComment
+                      postId={selectedBlogPost.id}
+                      token={token}
+                      onCommentAdded={handleCommentAdded} // Callback for new comments
+                  />
     
               {/* Comments Section */}
               <div className="mt-8">
