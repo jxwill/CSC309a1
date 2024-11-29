@@ -23,41 +23,29 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     const cookies = cookie.parse(req.headers.cookie || "");
     const token = cookies.token || null;
 
-    if (!token) {
-        return {
-            redirect: {
-                destination: "/login",
-                permanent: false,
-            },
-        };
-    }
+    let user = null;
 
-    try {
-        // Fetch user basic information
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    if (token) {
+        try {
+            // Fetch user basic information only if the token exists
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
 
-        if (!response.ok) {
-            throw new Error("Failed to fetch user profile");
+            if (!response.ok) {
+                throw new Error("Failed to fetch user profile");
+            }
+
+            user = await response.json();
+        } catch (error) {
+            console.error("Error fetching profile data:", error);
         }
-
-        const user = await response.json();
-        console.log(1);
-        ;
-
-        return { props: { user, token } };
-    } catch (error) {
-        console.error("Error fetching profile data:", error);
-        return {
-            redirect: {
-                destination: "/login",
-                permanent: false,
-            },
-        };
     }
+
+    // Return props: user data if available, else null
+    return { props: { user, token } };
 };
 
 const CodeTemplatePage = ({ user, token }: template) => {
