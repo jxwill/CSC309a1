@@ -28,21 +28,20 @@ export default async function handler(req, res) {
 
     try {
         // Check if the blog post exists and if the user is authorized to delete it
-        console.log(1,id);
+
         const blogPost = await prisma.blogPost.findUnique({
             where: { id: parseInt(id) },
         });
-        console.log(2,id);
 
+        console.log(blogPost.userId,tokenPayload.id);
         if (!blogPost || blogPost.userId !== tokenPayload.id) {
             return res.status(403).json({ error: 'Forbidden: You do not have permission to delete this blog post' });
         }
-        console.log(3,id);
         // Delete the blog post
-        await prisma.blogPost.delete({
+        const a = await prisma.blogPost.delete({
             where: { id: parseInt(id) },
         });
-        onsole.log(4,id);
+        console.log(55);
         res.status(200).json({ success: true, message: 'Blog post deleted successfully' });
     } catch (error) {
         console.error('Error deleting blog post:', error);
