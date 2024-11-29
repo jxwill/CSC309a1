@@ -10,7 +10,7 @@ sleep 5  # You can adjust the time if the app takes longer to start
 
 # Step 3: Open the site in the default browser (for Linux)
 echo "Opening the site in the browser..."
-xdg-open http://localhost:3000  # Linux, replace with `open` on macOS, `start` on Windows
+open http://localhost:3000  # Linux, replace with `open` on macOS, `start` on Windows
 
 # Optionally, you can check if the server is actually running before opening the browser:
 # curl --silent --head --fail http://localhost:3000 || exit 1
