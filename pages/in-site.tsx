@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import cookie from "cookie";
 import { GetServerSideProps } from "next";
 import Link from "next/link";
-import RateBlogPost from "pages/RateBlogPost";
-import AddComment from "pages/AddComment";
+import RateBlogPost from "./RateBlogPost";
+import AddComment from "./AddComment";
+import RateComment from "pages/rateComments";
 import { useRouter } from "next/router";
 import { FaThumbsUp, FaThumbsDown, FaReply } from "react-icons/fa"; // Icons for upvote/downvote
 
@@ -32,10 +33,16 @@ interface BlogPost {
   content: string;
   tags: string;
   codeTemplates: CodeTemplate[];
+  userId: number
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
   ratings: Rating[];
+  stats?: {
+    upvotes: number;
+    downvotes: number;
+    totalScore: number;
+  }; // Add this field
 }
 
 interface Comment {
@@ -129,6 +136,11 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   const [replyContents, setReplyContents] = useState({}); // Object to store reply contents for each comment
   const [currentPage, setCurrentPage] = useState(1);
   const [searchResults, setSearchResults] = useState([]);
+  const [posts, setPosts] = useState(blogPosts);
+  const [replyContent, setReplyContent] = useState("");
+  const [searchQueryInput, setSearchQueryInput] = useState(""); // State for search input
+  const [searchByInput, setSearchByInput] = useState("title"); // State for dropdown selection
+
 
   useEffect(() => {
     if (user && user.role === "Admin") {
@@ -136,94 +148,13 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
   }, [user, router]);
 
-  const handleSearch = async () => {
-    console.log(`Searching for "${searchInput}" by "${searchBy}"`);
 
-    if (!searchInput.trim()) {
-      alert("Please enter a search query.");
-      return;
-    }
-    try {
-      router.push({
-        pathname: "/codeTemplate/search",
-        query: {
-          options: searchBy,
-          info: searchInput,
-        },
-      })
-    } catch (error) {
-      console.error("Error fetching search results:", error);
-      setTemplates([]); // Clear results in case of an error
-    }
-  };
-
-  const handleSearchBlogpost = async () => {
-    if (!searchQuery.trim()) {
-      alert("Please enter a search condition.");
-      return;
-    }
-
-    try {
-      await router.push({
-        pathname: "/Searchblogposts",
-        query: {
-          criteria: filterBy, // e.g., "title"
-          query: searchQuery.trim(), // e.g., "33"
-        },
-      });
-    } catch (error) {
-      console.error("Error navigating to search page:", error);
-    }
-
-  };
 
   const handleReply = (commentId) => {
     setReplyToCommentId(commentId); // Set the comment being replied to
     setReplyContents((prev) => ({ ...prev, [commentId]: "" })); // Initialize the reply content for this comment
   };
 
-  const handleSubmitReply = async (commentId) => {
-    if (!token) {
-      alert("You need to log in to reply to a comment.");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/comments/createcomments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          blogPostId: selectedBlogPost.id,
-          parentCommentId: commentId,
-          content: replyContents[commentId],
-        }),
-      });
-
-      if (response.ok) {
-        const { comment } = await response.json();
-        console.log("Reply submitted successfully:", comment);
-
-        // Update the comments state with the new reply
-        setSelectedBlogPost((prev) => ({
-          ...prev,
-          comments: updateCommentsWithReply(prev.comments, comment),
-        }));
-
-        // Reset the reply input for this comment
-        setReplyContents((prev) => ({ ...prev, [commentId]: "" }));
-        setReplyToCommentId(null);
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to submit reply.");
-      }
-    } catch (error) {
-      console.error("Error submitting reply:", error);
-      alert("An error occurred while submitting your reply. Please try again.");
-    }
-  };
 
 
 
@@ -281,6 +212,85 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     }
     return user.avatar;
   };
+
+  const CommentItem = ({
+    comment,
+    onReplyClick,
+    onSubmitReply,
+    replyToCommentId,
+    replyContent,
+    setReplyContent,
+    handleReport,
+  }) => (
+<div className="p-4 bg-gray-100 rounded-lg shadow flex flex-col">
+<div>
+<p className="text-gray-800">{comment.content}</p>
+{comment.author ? (
+<span className="block text-sm text-gray-500 mt-2">
+<strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+</span>
+) : (
+<span className="block text-sm text-gray-500 mt-2 italic">
+<strong>By:</strong> Anonymous
+</span>
+)}
+</div>
+
+<div className="flex space-x-4 mt-4">
+{/* Report Button */}
+<button
+onClick={() => handleReport(comment.id, "Comment")}
+className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+>
+Report Comment
+</button>
+
+{/* Reply Button */}
+<button
+onClick={() => onReplyClick(comment.id)}
+className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+>
+Reply
+</button>
+</div>
+
+{/* Reply Form */}
+{replyToCommentId === comment.id && (
+<div className="mt-4">
+<textarea
+className="w-full p-2 border rounded-lg"
+placeholder="Write your reply..."
+value={replyContent}
+onChange={(e) => setReplyContent(e.target.value)}
+></textarea>
+<button
+onClick={() => onSubmitReply(comment.id)}
+className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+>
+Submit Reply
+</button>
+</div>
+)}
+
+{/* Render Replies */}
+{comment.replies && comment.replies.length > 0 && (
+<div className="mt-4 pl-6 border-l-2 border-gray-200">
+{comment.replies.map((reply) => (
+<CommentItem
+ key={reply.id}
+ comment={reply}
+ onReplyClick={onReplyClick}
+ onSubmitReply={onSubmitReply}
+ replyToCommentId={replyToCommentId}
+ replyContent={replyContent}
+ setReplyContent={setReplyContent}
+ handleReport={handleReport}
+/>
+))}
+</div>
+)}
+</div>
+);
   
 
   
@@ -302,6 +312,38 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
         replies: updateCommentsWithReply(comment.replies || [], newReply),
       };
     });
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      alert("Please enter a search query.");
+      return;
+    }
+  
+    try {
+      const queryParam: Record<string, string> = {};
+      if (searchCriteria === "title") queryParam.title = searchQuery;
+      if (searchCriteria === "content") queryParam.content = searchQuery;
+      if (searchCriteria === "tags") queryParam.tags = searchQuery;
+      if (searchCriteria === "codeTemplate") queryParam.codeTemplate = searchQuery;
+  
+      const queryString = new URLSearchParams(queryParam).toString();
+      const response = await fetch(`/api/blogpost?${queryString}`);
+      const data = await response.json();
+  
+      if (response.ok && data.success) {
+        console.log("Search Results:", data.data); // Debugging the results
+        setSearchResults(data.data);
+        setSelectedBlogPost(null); // Reset selected post when new search results are displayed
+      } else {
+        console.warn("No results found:", data.message); // Log the API response
+        setSearchResults([]);
+        alert("No results found for your query.");
+      }
+    } catch (error) {
+      console.error("Error during search:", error);
+      alert("An error occurred while searching. Please try again later.");
+    }
   };
 
 
@@ -363,6 +405,156 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
     setMenuOpen((prev) => !prev);
   };
 
+  
+
+  
+  
+  const [replyState, setReplyState] = useState({}); // Track which comment/reply has reply form open and the content
+  
+  const toggleReplyForm = (id) => {
+    setReplyState((prevState) => ({
+      ...prevState,
+      [id]: {
+        ...prevState[id],
+        showReplyForm: !prevState[id]?.showReplyForm,
+      },
+    }));
+  };
+  
+  const handleReplyChange = (e, id) => {
+    setReplyState((prevState) => ({
+      ...prevState,
+      [id]: {
+        ...prevState[id],
+        replyContent: e.target.value,
+      },
+    }));
+  };
+  
+  const handleSubmitReply = async (parentCommentId) => {
+    if (!replyContent.trim()) {
+      alert("Reply content cannot be empty.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/comments/${parentCommentId}/replycomments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: replyContent }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReplyContent("");
+        setReplyToCommentId(null);
+
+        // Update comments state with the new reply
+        const addReplyToComments = (comments, parentCommentId, reply) => {
+          return comments.map((comment) => {
+            if (comment.id === parentCommentId) {
+              return {
+                ...comment,
+                replies: comment.replies
+                    ? [...comment.replies, reply]
+                    : [reply],
+              };
+            } else if (comment.replies) {
+              return {
+                ...comment,
+                replies: addReplyToComments(comment.replies, parentCommentId, reply),
+              };
+            }
+            return comment;
+          });
+        };
+
+        setComments((prevComments) =>
+            addReplyToComments(prevComments, parentCommentId, data.reply)
+        );
+      } else {
+        alert("Failed to submit reply.");
+      }
+    } catch (error) {
+      console.error("Error submitting reply:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+
+  const handleReplyClick = (commentId) => {
+    setReplyToCommentId(commentId); // Set the comment ID to reply to
+  };
+
+  const topLevelComments = comments.filter((comment) => comment.parentCommentId === null);
+
+  const renderComments = (comments) => {
+    return comments.map((comment) => (
+        <div key={comment.id} className="p-4 bg-gray-100 rounded-lg shadow mb-4">
+          <div>
+            <p className="text-gray-800">{comment.content}</p>
+            {comment.author ? (
+                <span className="block text-sm text-gray-500 mt-2">
+            <strong>By:</strong> {`${comment.author.firstname} ${comment.author.lastname}`}
+          </span>
+            ) : (
+                <span className="block text-sm text-gray-500 mt-2 italic">
+            <strong>By:</strong> Anonymous
+          </span>
+            )}
+          </div>
+
+          <div className="flex space-x-4 mt-4">
+            {/* Report Button */}
+            <button
+                onClick={() => handleReport(comment.id, "Comment")}
+                className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
+            >
+              Report Comment
+            </button>
+
+            {/* Conditionally render the Reply button only for top-level comments */}
+            {comment.parentCommentId === null && (
+                <button
+                    onClick={() => handleReplyClick(comment.id)}
+                    className="px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition"
+                >
+                  Reply
+                </button>
+            )}
+          </div>
+
+          {/* Render the Reply Form if replyToCommentId matches */}
+          {replyToCommentId === comment.id && (
+              <div className="mt-4 w-full">
+          <textarea
+              className="w-full p-2 border rounded-lg"
+              placeholder="Write your reply..."
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+          ></textarea>
+                <button
+                    onClick={() => handleSubmitReply(comment.id)}
+                    className="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg"
+                >
+                  Submit Reply
+                </button>
+              </div>
+          )}
+
+          {/* Render Replies */}
+          {comment.replies && comment.replies.length > 0 && (
+              <div className="ml-8 mt-4">
+                {renderComments(comment.replies)}
+              </div>
+          )}
+        </div>
+    ));
+  };
+
   const renderTabs = () => (
     <div className="flex justify-between items-center mb-8">
       {/* Tabs on the left */}
@@ -397,6 +589,7 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       if (response.ok) {
         setSortedBlogPosts(data.data); // Store sorted data
         setIsSorted(true); // Mark as sorted
+        setCurrentPage(1); // Reset to the first page
       } else {
         console.error("Failed to fetch sorted blog posts:", data.message);
         alert(data.message || "Failed to fetch sorted blog posts.");
@@ -472,43 +665,18 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       },
     });
   };
+
+  const handleRateUpdate = (postId, updatedStats) => {
+    setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+            post.id === postId
+                ? { ...post, stats: updatedStats } // Update only the rated post's stats
+                : post
+        )
+    );
+  };
   
 
-
-  const handleSortByRating = async () => {
-    if (!selectedBlogPost?.id) {
-      alert("No blog post selected.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/blogpost/sortedByRating?id=${selectedBlogPost.id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Update the blog post with sorted comments
-          setSelectedBlogPost((prev) => ({
-            ...prev,
-            comments: data.data.comments, // Use updated comments from the API
-          }));
-        } else {
-          alert(data.message || "Failed to fetch sorted comments.");
-        }
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to fetch sorted comments.");
-      }
-    } catch (error) {
-      console.error("Error fetching and sorting comments by rating:", error);
-      alert("An error occurred while fetching comments. Please try again.");
-    }
-  };
 
   const renderTemplates = () => {
     const itemsPerPage = 5; // Number of templates per page
@@ -523,11 +691,29 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       }
     };
   
+    // Handle search action
+    const handleSearch = () => {
+      // Retrieve values from the search input and dropdown
+      const searchQuery = searchQueryInput.trim();
+      const searchBy = searchByInput;
+  
+      // Redirect to SearchPage with query parameters
+      if (searchQuery) {
+        router.push({
+          pathname: '/codeTemplate/search',
+          query: { options: searchBy, info: searchQuery },
+        });
+      }
+    };
+  
     return (
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Sidebar */}
         <aside className="w-full md:w-1/4 bg-white p-6 shadow-md rounded-lg mb-4 md:mb-0">
           <h2 className="text-lg font-bold mb-6 text-gray-800">Code Templates</h2>
+  
+          
+  
           <div className="space-y-4">
             {paginatedTemplates.map((template) => (
               <button
@@ -568,6 +754,33 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   
         {/* Main Content */}
         <main className="flex-1 p-6">
+          {/* Search Input and Dropdown */}
+          <div className="space-y-4 mb-6">
+            <input
+              type="text"
+              placeholder="Search query"
+              value={searchQueryInput}
+              onChange={(e) => setSearchQueryInput(e.target.value)}
+              className="w-full px-4 py-2 border rounded-md shadow-sm"
+            />
+            <select
+              value={searchByInput}
+              onChange={(e) => setSearchByInput(e.target.value)}
+              className="w-full px-4 py-2 border rounded-md shadow-sm"
+            >
+              <option value="title">Search by Title</option>
+              <option value="description">Search by Description</option>
+              <option value="author">Search by Author</option>
+              <option value="tags">Search by Tag</option>
+            </select>
+  
+            <button
+              onClick={handleSearch}
+              className="w-full bg-blue-500 text-white font-bold py-2 rounded-md shadow-md mt-4"
+            >
+              Next
+            </button>
+          </div>
           {selectedTemplate ? (
             <div className="p-6 bg-white shadow-md rounded-lg">
               <h3 className="text-2xl font-semibold mb-4 text-gray-800">
@@ -601,203 +814,225 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
   };
   
   
+  
+  
   const renderBlogPosts = () => {
     const postsPerPage = 5; // Number of posts per page
-    const totalPages = Math.ceil(blogPosts.length / postsPerPage);
-    const startIndex = (currentPage - 1) * postsPerPage;
-    const endIndex = startIndex + postsPerPage;
-    const paginatedBlogPosts = blogPosts.slice(startIndex, endIndex);
-
-    const handlePageChange = (page) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
-    };
-
-    const handleSearch = async () => {
-      if (!searchQuery.trim()) {
-        alert("Please enter a search query.");
-        return;
-      }
-    
-      try {
-        const queryParam: Record<string, string> = {};
-        if (searchCriteria === "title") queryParam.title = searchQuery;
-        if (searchCriteria === "content") queryParam.content = searchQuery;
-        if (searchCriteria === "tags") queryParam.tags = searchQuery;
-        if (searchCriteria === "codeTemplate") queryParam.codeTemplate = searchQuery;
-    
-        const queryString = new URLSearchParams(queryParam).toString();
-        const response = await fetch(`/api/blogpost?${queryString}`);
-        const data = await response.json();
-    
-        if (response.ok && data.success) {
-          console.log("Search Results:", data.data); // Debugging the results
-          setSearchResults(data.data);
-          setSelectedBlogPost(null); // Reset selected post when new search results are displayed
-        } else {
-          console.warn("No results found:", data.message); // Log the API response
-          setSearchResults([]);
-          alert("No results found for your query.");
-        }
-      } catch (error) {
-        console.error("Error during search:", error);
-        alert("An error occurred while searching. Please try again later.");
-      }
-    };
-    
-    
-
-    return (
-        <div className="flex flex-col md:flex-row min-h-screen">
-            {/* Sidebar */}
-            <aside className="w-full md:w-1/4 bg-white p-6 shadow-lg rounded-lg">
-                <h2 className="text-lg font-bold mb-6 text-gray-800">Blog Posts</h2>
-
-                {/* Blog Posts List */}
-                <div className="space-y-4">
-                    {paginatedBlogPosts.map((post) => (
-                        <button
-                            key={post.id}
-                            className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
-                                selectedBlogPost?.id === post.id
-                                    ? "bg-indigo-500 text-white shadow-lg"
-                                    : "bg-gray-100 hover:bg-indigo-200"
-                            }`}
-                            onClick={() => setSelectedBlogPost(post)}
-                        >
-                            {post.title}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Pagination Controls */}
-                <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full max-w-lg mx-auto">
-                    <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
-                    >
-                        Previous
-                    </button>
-                    <span className="text-gray-600 text-sm sm:text-base font-medium flex-grow sm:flex-grow-0 text-center">
-                        Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
-                    >
-                        Next
-                    </button>
-                </div>
-            </aside>
-
-            
-
-            <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
-  {/* Search */}
-  <div className="mb-6 flex flex-wrap md:flex-nowrap items-center gap-4">
-    {/* Dropdown for Search Criteria */}
-    <div className="flex-1 min-w-[150px]">
-      <select
-        value={searchCriteria}
-        onChange={(e) => setSearchCriteria(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="title">Title</option>
-        <option value="content">Content</option>
-        <option value="tags">Tags</option>
-        <option value="codeTemplate">Code Template</option>
-      </select>
-    </div>
-
-    {/* Input for Search Query */}
-    <div className="flex-1 min-w-[200px]">
-      <input
-        type="text"
-        placeholder={`Search by ${searchCriteria}`}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      />
-    </div>
-
-    {/* Search Button */}
-    <button
-      onClick={handleSearch}
-      className="w-full md:w-auto px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-all"
-    >
-      Search
-    </button>
-  </div>
-
-  {/* Display Search Results or Selected Blog Post */}
-  {searchResults.length > 0 ? (
-    <div>
-      <h3 className="text-xl font-bold mb-4">Search Results</h3>
-      <div className="space-y-4">
-        {searchResults.map((result) => (
-          <div
-            key={result.id}
-            className="p-4 bg-white shadow-md rounded-lg cursor-pointer hover:shadow-lg transition"
-            onClick={() => {
-              handleSelectBlogPost(result);
-              setSearchResults([]); // Clear search results when selecting a post
-              setSearchQuery(""); // Clear the search input
-            }}
-          >
-            <h4 className="text-lg font-semibold text-gray-800">
-              {result.title}
-            </h4>
-            <p className="text-sm text-gray-600">{result.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  ) : selectedBlogPost ? (
-    <div className="p-6 bg-white shadow-lg rounded-lg">
-      <h3 className="text-2xl font-bold mb-4 text-gray-800">
-        {selectedBlogPost.title}
-      </h3>
-      <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
-      <div className="prose max-w-none">
-        <p>{selectedBlogPost.content}</p>
-      </div>
-      <div className="mt-6">
-        <span className="block text-sm text-gray-500">
-          <strong>Created:</strong>{" "}
-          {selectedBlogPost.createdAt
-            ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
-            : "N/A"}
-        </span>
-        <span className="block text-sm text-gray-500">
-          <strong>Updated:</strong>{" "}
-          {selectedBlogPost.updatedAt
-            ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
-            : "N/A"}
-        </span>
-      </div>
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={() => handleReport(selectedBlogPost.id, "BlogPost")}
-          className="px-4 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600 transition"
-        >
-          Report Post
-        </button>
-      </div>
-    </div>
-  ) : (
-    <p className="text-center text-gray-600 font-medium">
-      Select a blog post from the sidebar or search for content.
-    </p>
-  )}
-</main>
-
-
-        </div>
+    const totalPages = Math.ceil(
+      (isSorted ? sortedBlogPosts : blogPosts).length / postsPerPage
     );
-};
+  
+    const paginatedBlogPosts = (isSorted ? sortedBlogPosts : blogPosts).slice(
+      (currentPage - 1) * postsPerPage,
+      currentPage * postsPerPage
+    );
+  
+    const handlePageChange = (page) => {
+      if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+      }
+    };
+  
+    return (
+      <div className="flex flex-col md:flex-row min-h-screen">
+        {/* Sidebar */}
+        <aside
+          className={`w-full md:w-1/4 bg-white p-6 shadow-lg rounded-lg overflow-y-auto ${menuOpen ? "block" : "hidden md:block"}`}
+          style={{ maxHeight: "calc(100vh - 120px)" }} // Ensure the sidebar fits within the viewport
+        >
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-800">Blog Posts</h2>
+    
+            {/* Close Button for Mobile */}
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="md:hidden text-gray-600 hover:text-gray-800 transition"
+            >
+              <span className="material-icons">close</span>
+            </button>
+          </div>
+    
+          {/* Sort Button */}
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                if (isSorted) {
+                  setIsSorted(false); // Reset to original blog posts
+                  setCurrentPage(1); // Reset to first page
+                } else {
+                  handleSortBlogPosts("rating"); // Fetch and sort by rating
+                }
+              }}
+              className="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-lg shadow-md hover:from-indigo-600 hover:to-purple-600 transition-all"
+            >
+              {isSorted ? "Show Default Order" : "Sort by Rating"}
+            </button>
+          </div>
+    
+          {/* Blog Post List */}
+          <div className="space-y-4">
+            {paginatedBlogPosts.map((post) => (
+              <button
+                key={post.id}
+                className={`w-full px-4 py-3 text-left rounded-lg font-medium transition duration-300 ${
+                  selectedBlogPost?.id === post.id
+                    ? "bg-indigo-500 text-white shadow-lg"
+                    : "bg-gray-100 hover:bg-indigo-200"
+                }`}
+                onClick={() => {
+                  setSearchResults([]); // Clear search results when clicking a sidebar item
+                  handleSelectBlogPost(post); // Handle blog post selection
+                }}
+              >
+                {post.title}
+              </button>
+            ))}
+          </div>
+    
+          {/* Pagination Controls */}
+          <div className="mt-4 flex flex-wrap justify-between items-center gap-4 w-full max-w-lg mx-auto">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
+            >
+              Previous
+            </button>
+            <span className="text-gray-600 text-sm sm:text-base font-medium flex-grow sm:flex-grow-0 text-center">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex-grow sm:flex-grow-0 px-4 py-2 bg-gray-300 text-gray-600 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm sm:text-base"
+            >
+              Next
+            </button>
+          </div>
+        </aside>
+    
+        {/* Main Content */}
+        <main className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-lg">
+          {/* Search */}
+          <div className="mb-6 flex flex-wrap md:flex-nowrap items-center gap-4">
+            {/* Dropdown for Search Criteria */}
+            <div className="flex-1 min-w-[150px]">
+              <select
+                value={searchCriteria}
+                onChange={(e) => setSearchCriteria(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="title">Title</option>
+                <option value="content">Content</option>
+                <option value="tags">Tags</option>
+                <option value="codeTemplate">Code Template</option>
+              </select>
+            </div>
+    
+            {/* Input for Search Query */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder={`Search by ${searchCriteria}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+    
+            {/* Search Button */}
+            <button
+              onClick={handleSearch}
+              className="w-full md:w-auto px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-all"
+            >
+              Search
+            </button>
+          </div>
+    
+          {/* Display Search Results or Selected Blog Post */}
+          {searchResults.length > 0 ? (
+            <div>
+              <h3 className="text-xl font-bold mb-4">Search Results</h3>
+              <div className="space-y-4">
+                {searchResults.map((result) => (
+                  <div
+                    key={result.id}
+                    className="p-4 bg-white shadow-md rounded-lg cursor-pointer hover:shadow-lg transition"
+                    onClick={() => {
+                      handleSelectBlogPost(result);
+                      setSearchResults([]); // Clear search results when selecting a post
+                      setSearchQuery(""); // Clear the search input
+                    }}
+                  >
+                    <h4 className="text-lg font-semibold text-gray-800">{result.title}</h4>
+                    <p className="text-sm text-gray-600">{result.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : selectedBlogPost ? (
+            <div className="p-6 bg-white shadow-lg rounded-lg">
+              <h3 className="text-2xl font-bold mb-4 text-gray-800">
+                {selectedBlogPost.title}
+              </h3>
+              <p className="text-gray-600 mb-6">{selectedBlogPost.description}</p>
+              <div className="prose max-w-none">
+                <p>{selectedBlogPost.content}</p>
+              </div>
+              <div className="mt-6">
+                <span className="block text-sm text-gray-500">
+                  <strong>Created:</strong>{" "}
+                  {selectedBlogPost.createdAt
+                    ? new Date(selectedBlogPost.createdAt).toLocaleDateString()
+                    : "N/A"}
+                </span>
+                <span className="block text-sm text-gray-500">
+                  <strong>Updated:</strong>{" "}
+                  {selectedBlogPost.updatedAt
+                    ? new Date(selectedBlogPost.updatedAt).toLocaleDateString()
+                    : "N/A"}
+                </span>
+              </div>
+    
+              {/* Rating Section */}
+              <RateBlogPost postId={selectedBlogPost.id} token={token} userId={selectedBlogPost.userId} />
+    
+              {/* Add Comment Section */}
+              <AddComment postId={selectedBlogPost.id} token={token} />
+    
+              {/* Comments Section */}
+              <div className="mt-8">
+                <h4 className="text-lg font-bold mb-4">Comments</h4>
+                {commentsLoading ? (
+                  <p className="text-gray-500">Loading comments...</p>
+                ) : commentsError ? (
+                  <p className="text-red-500">Error: {commentsError}</p>
+                ) : topLevelComments.length > 0 ? (
+                  <div className="space-y-4">
+                    {renderComments(topLevelComments)}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No comments yet.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Select a post to view details.
+              </h3>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+    
+    // The return statement should be the last part of your component.
+    
+  };
+  
+
 
 
   
@@ -1009,10 +1244,6 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
       </footer>
     </div>
   );
-  
-  
-  
-  
   
 }
 

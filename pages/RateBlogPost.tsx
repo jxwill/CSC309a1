@@ -1,128 +1,145 @@
-import { useState, useEffect } from "react";
-import PopupModal from "./PopupModal";
+import React, { useState, useEffect } from "react";
+import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
+import { useRouter } from "next/router";
 
-const RateBlogPost = ({
-    postId,
-    token,
-    initialUpvotes = 0,
-    initialDownvotes = 0,
-    initialUserVote = 0,
-}: {
-    postId: number;
-    token: string | null;
-    initialUpvotes?: number;
-    initialDownvotes?: number;
-    initialUserVote?: number;
-}) => {
-    const [upvotes, setUpvotes] = useState(initialUpvotes);
-    const [downvotes, setDownvotes] = useState(initialDownvotes);
-    const [userVote, setUserVote] = useState<1 | -1 | 0>((initialUserVote ?? 0) as 1 | -1 | 0);
-    const [totalScore, setTotalScore] = useState(initialUpvotes - initialDownvotes);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Tracks modal visibility
-    const [loading, setLoading] = useState(false); // Tracks loading state for fetching initial data
+const RateBlogPost = ({ postId, token, userId }) => {
+    const [ratingStats, setRatingStats] = useState({ upvotes: 0, downvotes: 0, totalScore: 0 });
+    const [userVote, setUserVote] = useState(0); // User's current vote (1 = upvote, -1 = downvote, 0 = no vote)
+    const [loading, setLoading] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const router = useRouter();
 
-    // Fetch updated vote data on component mount or postId change
+    // Fetch initial rating stats for the blog post
     useEffect(() => {
-        const fetchVoteData = async () => {
-            setLoading(true); // Start loading
+        const fetchRatingStats = async () => {
             try {
-                const response = await fetch(`/api/blogpost/${postId}/rate`, {
+                const response = await fetch(`/api/blogpost/${postId}/getBlogpost`, {
                     method: "GET",
                     headers: {
-                        Authorization: token ? `Bearer ${token}` : undefined,
-                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
                     },
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setUpvotes(data.upvotes || 0);
-                    setDownvotes(data.downvotes || 0);
-                    setUserVote(data.userVote || 0);
-                    setTotalScore(data.upvotes - data.downvotes);
-                } else {
-                    console.error("Failed to fetch vote data.");
+                const data = await response.json();
+                if (data.success) {
+                    const blogPost = data.data.blogPost;
+
+                    // Update stats
+                    setRatingStats(blogPost.stats);
+
+                    // Determine if the user has already voted
+                    const userRating = blogPost.ratings.find((rating) => rating.userId === userId);
+                    setUserVote(userRating ? userRating.value : 0);
                 }
             } catch (error) {
-                console.error("Error fetching vote data:", error);
-            } finally {
-                setLoading(false); // End loading
+                console.error("Error fetching blog post rating stats:", error);
             }
         };
 
-        fetchVoteData();
-    }, [postId, token]); // Runs when postId or token changes
+        fetchRatingStats();
+    }, [postId, token, userId]);
 
-    const handleRate = async (value: number) => {
+    // Handle rating actions
+    const handleRating = async (value) => {
+        if (loading) return; // Prevent multiple simultaneous requests
+        setLoading(true);
+
         if (!token) {
-            setIsModalOpen(true); // Show login modal if the user is not logged in
+            setShowLoginModal(true); // Show login modal if user is not logged in
+            setLoading(false);
             return;
+        }
+
+        if (userVote === value) {
+            // If the user clicks the same vote, treat it as an undo
+            value = 0;
         }
 
         try {
             const response = await fetch(`/api/blogpost/${postId}/rate`, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({ value }),
             });
 
-            if (response.ok) {
-                const { data } = await response.json();
-                setUpvotes(data.stats.upvotes);
-                setDownvotes(data.stats.downvotes);
-                setTotalScore(data.stats.totalScore);
-                setUserVote(value as 1 | -1 | 0); // Update user's vote
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setRatingStats(data.data.stats); // Update stats
+                setUserVote(value); // Update user's vote
             } else {
-                console.error("Failed to rate the blog post.");
+                console.error("Error updating blog post rating:", data.error || "Unknown error");
+                alert(data.error || "Failed to update rating. Please try again.");
             }
         } catch (error) {
-            console.error("Error rating blog post:", error);
+            console.error("Error updating blog post rating:", error);
+            alert("An error occurred while updating the rating. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="flex items-center space-x-4 mt-6">
-            {/* Modal for Login */}
-            <PopupModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)} // Close the modal
-                onLogin={() => {
-                    setIsModalOpen(false);
-                    window.location.href = "/login"; // Redirect to login page
-                }}
-                message="You must be logged in to rate this blog post."
-            />
+        <div className="rating-section mt-4">
+            {/* Rating Buttons */}
+            <div className="flex items-center space-x-4">
+                {/* Upvote */}
+                <button
+                    onClick={() => handleRating(1)}
+                    className={`p-2 rounded-full ${
+                        userVote === 1 ? "bg-green-500 text-white" : "bg-gray-200 text-gray-600"
+                    }`}
+                    disabled={loading}
+                >
+                    <FaThumbsUp size={20} />
+                </button>
 
-            {loading ? (
-                <span className="text-gray-500">Loading...</span>
-            ) : (
-                <>
-                    {/* Upvote Button */}
-                    <button
-                        onClick={() => (userVote === 1 ? handleRate(0) : handleRate(1))}
-                        className={`flex items-center space-x-1 ${userVote === 1 ? "text-green-700" : "text-green-500 hover:text-green-700"
-                            }`}
-                    >
-                        <span>👍</span>
-                        <span>{upvotes}</span>
-                    </button>
+                {/* Downvote */}
+                <button
+                    onClick={() => handleRating(-1)}
+                    className={`p-2 rounded-full ${
+                        userVote === -1 ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
+                    }`}
+                    disabled={loading}
+                >
+                    <FaThumbsDown size={20} />
+                </button>
+            </div>
 
-                    {/* Downvote Button */}
-                    <button
-                        onClick={() => (userVote === -1 ? handleRate(0) : handleRate(-1))}
-                        className={`flex items-center space-x-1 ${userVote === -1 ? "text-red-700" : "text-red-500 hover:text-red-700"
-                            }`}
-                    >
-                        <span>👎</span>
-                        <span>{downvotes}</span>
-                    </button>
+            {/* Stats Display */}
+            <div className="stats mt-4 text-sm text-gray-600">
+                <p><strong>Upvotes:</strong> {ratingStats.upvotes}</p>
+                <p><strong>Downvotes:</strong> {ratingStats.downvotes}</p>
+                <p><strong>Total Score:</strong> {ratingStats.totalScore}</p>
+            </div>
 
-                    {/* Total Score */}
-                    <span className="text-gray-600">Score: {totalScore}</span>
-                </>
+            {/* Login Modal */}
+            {showLoginModal && (
+                <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
+                    <div className="bg-white p-6 rounded-lg shadow-lg text-center w-96">
+                        <h4 className="text-lg font-bold mb-4">Please Log In</h4>
+                        <p className="text-gray-600 mb-4">You need to log in to rate this blog post.</p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={() => {
+                                    setShowLoginModal(false);
+                                    router.push("/login");
+                                }}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold"
+                            >
+                                Log In
+                            </button>
+                            <button
+                                onClick={() => setShowLoginModal(false)}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

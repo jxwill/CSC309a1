@@ -126,29 +126,38 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
 
     fetchUserContent();
   }, [user?.id, token]);
-
-  const handleDelete = async (postId: number) => {
-    const confirmDelete = window.confirm("Are youU sure you want to delete this blog post?");
-    if (!confirmDelete) return;
-
+  // Handle delete action for blog post
+  const handleDeleteBlogPost = async (postId: number) => {
     try {
-      const response = await fetch(`/api/blogpost/${postId}/delete`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`, // Ensure the token is passed
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api//blogpost/${postId}/delete`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      if (response.ok) {
-        setBlogPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId)); // Remove the deleted post
-      } else {
-        console.error("Failed to delete blog post.");
+      if (!response.ok) {
+        throw new Error("Failed to delete the blog post");
       }
+
+      // Remove the deleted post from the state
+      setBlogPosts(blogPosts.filter((post) => post.id !== postId));
+      alert("Blog post deleted successfully");
     } catch (error) {
       console.error("Error deleting blog post:", error);
+      alert("Failed to delete blog post");
     }
   };
 
+  // Handle edit action for blog post
+  const handleEditBlogPost = (postId: number) => {
+    // Redirect to the page with query string containing the postId
+    router.push(`/editBlogPost?id=${postId}`);
+  };
+  
 
 
   return (
@@ -197,39 +206,31 @@ const ProfilePage: React.FC<ProfileProps> = ({ user, token }) => {
             {loading ? (
                 <p>Loading blog posts...</p>
             ) : blogPosts.length > 0 ? (
-                blogPosts.map((post) => (
-                    <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
-                      <p className="text-sm text-gray-600 mt-2">{post.description}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Created: {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
+              blogPosts.map((post) => (
+                <div key={post.id} className="bg-white shadow-md rounded-lg p-4">
+                  <h3 className="text-lg font-bold text-gray-800">{post.title}</h3>
+                  <p className="text-sm text-gray-600 mt-2">{post.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Created: {new Date(post.createdAt).toLocaleDateString()}
+                  </p>
 
-                      {/* Button Section */}
-                      <div className="flex space-x-2 mt-4">
-                        {/* Edit Button */}
-                        <button
-                            onClick={() =>
-                                router.push({
-                                  pathname: `/editBlogposts/${post.id}`,
-                                  query: {token},
-                                })
-                            }
-                            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-600 transition"
-                        >
-                          Edit
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                            onClick={() => handleDelete(post.id)} // Call the delete handler
-                            className="w-full bg-red-500 text-white py-2 px-4 rounded-lg shadow hover:bg-red-600 transition"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                ))
+                  {/* Edit and Delete buttons */}
+                  <div className="mt-4 flex justify-between">
+                    <button
+                      onClick={() => handleEditBlogPost(post.id)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteBlogPost(post.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
             ) : (
                 <p className="text-gray-500">No blog posts found.</p>
             )}
