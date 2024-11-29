@@ -1165,15 +1165,13 @@ export default function InSitePage({ user, token, isVisitor }: InSiteProps) {
             onClick={handleProfileClick}
             className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-lg hover:from-purple-700 hover:to-pink-700 transition flex items-center space-x-2"
           >
-            <span className="material-icons">person</span>
-            <span>Profile</span>
+            <span className="material-icons">Profile</span>
           </button>
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full shadow-lg hover:from-red-700 hover:to-pink-700 transition flex items-center space-x-2"
           >
-            <span className="material-icons">logout</span>
-            <span>Logout</span>
+            <span className="material-icons">Logout</span>
           </button>
 
           {/* User Avatar */}
