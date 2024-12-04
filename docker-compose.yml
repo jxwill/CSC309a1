@@ -3,11 +3,14 @@ version: '3.8'
 services:
   app:
     build:
-      context: .
+      context: .  # Use the current directory for the build
     ports:
-      - "3000:3000"  # Map port 3000 of the container to port 3000 of the host
+      - "3000:3000"  # Expose port 3000 on both host and container
     volumes:
-      - ./prisma:/app/prisma  # Mount the prisma folder for SQLite database and schema
+      - ./prisma:/app/prisma  # Mount the prisma folder for the SQLite database and schema
     env_file:
-      - ./.env  # Load additional environment variables from .env
-    command: npm run dev  # Start the application in development mode
+      - ./.env  # Load environment variables from the .env file
+    command: npm run start  # Start the Next.js server in dev mode when the container is up
+
+
+

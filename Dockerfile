@@ -7,24 +7,19 @@ WORKDIR /app
 # Copy package.json and package-lock.json into the container
 COPY package*.json ./
 
-# Copy the startup script into the container
-COPY startup.sh ./startup.sh
-
-# Set the startup.sh script as executable
-RUN chmod +x ./startup.sh
-
-# Install dependencies via startup.sh (this will run npm install)
-RUN ./startup.sh
+# Install dependencies
+RUN npm install
 
 # Copy the rest of the application into the container
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
+# Build the Next.js app for production
+RUN npm run build
 
 # Expose the port Next.js runs on
 EXPOSE 3000
 
-# Define the command to run the application (start server with run.sh)
-CMD ["./run.sh"]
+# Start the app in production mode (you can also use `npm start` if it's set up)
+CMD ["npm", "run", "start"]
+
 
